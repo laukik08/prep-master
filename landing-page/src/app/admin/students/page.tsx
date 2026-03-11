@@ -86,7 +86,10 @@ export default function StudentsManagement() {
                         {/* Actions */}
                         <TableCell>
                             <div className="flex items-center gap-2">
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-400 hover:text-white bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 rounded-md transition-colors">
+                                <button 
+                                    onClick={() => alert(`View Profile implementation pending for ${student.name}.`)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-400 hover:text-white bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 rounded-md transition-colors"
+                                >
                                     <ExternalLink className="w-3.5 h-3.5" /> Profile
                                 </button>
                                 <button

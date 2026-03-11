@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AdminNavbar } from '@/components/admin/layout/AdminNavbar';
-import { Sidebar } from '@/components/admin/layout/Sidebar';
+import { StudentNavbar } from '@/components/student/layout/StudentNavbar';
+import { StudentSidebar } from '@/components/student/layout/StudentSidebar';
 
-export default function AdminLayout({
+export default function StudentLayout({
     children,
 }: {
     children: React.ReactNode;
@@ -13,7 +13,7 @@ export default function AdminLayout({
     const [isDesktopMenuExpanded, setIsDesktopMenuExpanded] = useState(true);
 
     const handleMenuClick = () => {
-        if (window.innerWidth < 768) { // md breakpoint
+        if (window.innerWidth < 768) {
             setIsMobileMenuOpen(!isMobileMenuOpen);
         } else {
             setIsDesktopMenuExpanded(!isDesktopMenuExpanded);
@@ -23,16 +23,16 @@ export default function AdminLayout({
     return (
         <div className="h-screen overflow-hidden bg-[var(--color-background-primary)] text-white flex flex-col">
             <div className="z-50 shrink-0">
-                <AdminNavbar onMenuClick={handleMenuClick} />
+                <StudentNavbar onMenuClick={handleMenuClick} />
             </div>
             <div className="flex flex-1 overflow-hidden relative">
-                <Sidebar 
+                <StudentSidebar 
                     isOpen={isMobileMenuOpen} 
                     onClose={() => setIsMobileMenuOpen(false)} 
                     isDesktopExpanded={isDesktopMenuExpanded}
                 />
-                <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#0a0618] to-brand-950/20 p-4 sm:p-6 md:p-8">
-                    <div className="max-w-7xl mx-auto space-y-8">
+                <main className="flex-1 overflow-y-auto bg-[#030014] p-4 sm:p-6 md:p-8">
+                    <div className="max-w-[1400px] mx-auto min-h-full">
                         {children}
                     </div>
                 </main>

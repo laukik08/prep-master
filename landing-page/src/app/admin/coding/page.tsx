@@ -33,18 +33,54 @@ export default function CodingProblemsManagement() {
         hiddenTestCases: ''
     });
 
-    const handleAddProblem = (e: React.FormEvent) => {
+    const [editingId, setEditingId] = useState<number | null>(null);
+
+    const handleSaveProblem = (e: React.FormEvent) => {
         e.preventDefault();
-        const newProblem = {
-            id: Date.now(),
-            title: formData.title,
-            difficulty: formData.difficulty,
-            topic: formData.topic || 'General',
-        };
-        setProblems([newProblem, ...problems]);
-        setIsModalOpen(false);
-        // Reset
+        if (editingId) {
+            setProblems(problems.map(p => 
+                p.id === editingId ? { ...p, title: formData.title, difficulty: formData.difficulty, topic: formData.topic || 'General' } : p
+            ));
+        } else {
+            const newProblem = {
+                id: Date.now(),
+                title: formData.title,
+                difficulty: formData.difficulty,
+                topic: formData.topic || 'General',
+            };
+            setProblems([newProblem, ...problems]);
+        }
+        closeModal();
+    };
+
+    const openEditModal = (problemObj: any) => {
+        setEditingId(problemObj.id);
+        setFormData({ 
+            title: problemObj.title, 
+            description: '', // Mocked detail
+            difficulty: problemObj.difficulty, 
+            topic: problemObj.topic, 
+            constraints: '', 
+            exampleInput: '', 
+            exampleOutput: '', 
+            visibleTestCases: '', 
+            hiddenTestCases: '' 
+        });
+        setIsModalOpen(true);
+    };
+
+    const openAddModal = () => {
+        setEditingId(null);
         setFormData({ title: '', description: '', difficulty: 'Medium', topic: '', constraints: '', exampleInput: '', exampleOutput: '', visibleTestCases: '', hiddenTestCases: '' });
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setTimeout(() => {
+            setEditingId(null);
+            setFormData({ title: '', description: '', difficulty: 'Medium', topic: '', constraints: '', exampleInput: '', exampleOutput: '', visibleTestCases: '', hiddenTestCases: '' });
+        }, 200);
     };
 
     const getDifficultyColor = (difficulty: string) => {
@@ -63,7 +99,7 @@ export default function CodingProblemsManagement() {
                     <h1 className="text-3xl font-bold text-white tracking-tight">Coding Problems</h1>
                     <p className="text-white/50 mt-1">Manage DSA challenges and programming test cases.</p>
                 </div>
-                <Button variant="primary" className="flex items-center gap-2" onClick={() => setIsModalOpen(true)}>
+                <Button variant="primary" className="flex items-center gap-2" onClick={openAddModal}>
                     <Plus className="w-4 h-4" />
                     Add Problem
                 </Button>
@@ -81,7 +117,10 @@ export default function CodingProblemsManagement() {
                         <TableCell className="text-white/70">{p.topic}</TableCell>
                         <TableCell>
                             <div className="flex items-center gap-2">
-                                <button className="p-1.5 text-white/50 hover:text-brand-400 hover:bg-white/5 rounded-md transition-colors">
+                                <button 
+                                    onClick={() => openEditModal(p)}
+                                    className="p-1.5 text-white/50 hover:text-brand-400 hover:bg-white/5 rounded-md transition-colors"
+                                >
                                     <Edit2 className="w-4 h-4" />
                                 </button>
                                 <button
@@ -98,16 +137,18 @@ export default function CodingProblemsManagement() {
 
             <Modal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title="Add Coding Problem"
+                onClose={closeModal}
+                title={editingId ? "Edit Coding Problem" : "Add Coding Problem"}
                 footer={
                     <>
-                        <Button variant="outline" className="text-sm px-4 py-2 h-auto" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                        <Button variant="primary" className="text-sm px-4 py-2 h-auto" onClick={handleAddProblem}>Save Problem</Button>
+                        <Button variant="outline" className="text-sm px-4 py-2 h-auto" onClick={closeModal}>Cancel</Button>
+                        <Button variant="primary" className="text-sm px-4 py-2 h-auto" onClick={handleSaveProblem}>
+                            {editingId ? "Save Changes" : "Save Problem"}
+                        </Button>
                     </>
                 }
             >
-                <form id="add-problem-form" onSubmit={handleAddProblem} className="space-y-6">
+                <form id="add-problem-form" onSubmit={handleSaveProblem} className="space-y-6">
                     <div className="space-y-4">
                         <h3 className="text-sm font-semibold text-white/80 border-b border-white/10 pb-2">Basic Details</h3>
                         <FormInput label="Problem Title" id="title" placeholder="e.g. Two Sum" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />

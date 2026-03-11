@@ -33,11 +33,11 @@ export function FormSelect({ label, id, options, ...props }: FormSelectProps) {
             <select
                 id={id}
                 {...props}
-                className={`w-full h-11 bg-[#0a0618] border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-brand-500 focus:bg-white/5 transition-colors appearance-none ${props.className || ''}`}
+                className={`w-full h-11 bg-[#0a0618] border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-brand-500 focus:bg-[#150D2B] transition-colors appearance-none ${props.className || ''}`}
             >
-                <option value="" disabled className="text-white/30">Select {label}</option>
+                <option value="" disabled className="bg-[#0a0618] text-white/50">Select {label}</option>
                 {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-[#0a0618] text-white py-2">{opt.label}</option>
                 ))}
             </select>
         </div>

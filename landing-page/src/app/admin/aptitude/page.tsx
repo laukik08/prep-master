@@ -32,18 +32,49 @@ export default function AptitudeManagement() {
         difficulty: 'Medium',
     });
 
-    const handleAddQuestion = (e: React.FormEvent) => {
+    const [editingId, setEditingId] = useState<number | null>(null);
+
+    const handleSaveQuestion = (e: React.FormEvent) => {
         e.preventDefault();
-        const newQuestion = {
-            id: Date.now(),
-            question: formData.question,
-            category: formData.category,
-            difficulty: formData.difficulty,
-        };
-        setQuestions([newQuestion, ...questions]);
-        setIsModalOpen(false);
-        // Reset Form
+        if (editingId) {
+            setQuestions(questions.map(q => 
+                q.id === editingId ? { ...q, question: formData.question, category: formData.category, difficulty: formData.difficulty } : q
+            ));
+        } else {
+            const newQuestion = {
+                id: Date.now(),
+                question: formData.question,
+                category: formData.category,
+                difficulty: formData.difficulty,
+            };
+            setQuestions([newQuestion, ...questions]);
+        }
+        closeModal();
+    };
+
+    const openEditModal = (questionObj: any) => {
+        setEditingId(questionObj.id);
+        setFormData({ 
+            question: questionObj.question, 
+            optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A', // Mock option handling since we don't store them in initial array
+            category: questionObj.category, 
+            difficulty: questionObj.difficulty 
+        });
+        setIsModalOpen(true);
+    };
+
+    const openAddModal = () => {
+        setEditingId(null);
         setFormData({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A', category: 'Quantitative', difficulty: 'Medium' });
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setTimeout(() => {
+            setEditingId(null);
+            setFormData({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A', category: 'Quantitative', difficulty: 'Medium' });
+        }, 200);
     };
 
     const getDifficultyColor = (difficulty: string) => {
@@ -62,7 +93,7 @@ export default function AptitudeManagement() {
                     <h1 className="text-3xl font-bold text-white tracking-tight">Aptitude Questions</h1>
                     <p className="text-white/50 mt-1">Manage all multiple-choice aptitude questions.</p>
                 </div>
-                <Button variant="primary" className="flex items-center gap-2" onClick={() => setIsModalOpen(true)}>
+                <Button variant="primary" className="flex items-center gap-2" onClick={openAddModal}>
                     <Plus className="w-4 h-4" />
                     Add Question
                 </Button>
@@ -71,8 +102,8 @@ export default function AptitudeManagement() {
             <Table headers={['Question', 'Category', 'Difficulty', 'Actions']}>
                 {questions.map((q) => (
                     <TableRow key={q.id}>
-                        <TableCell className="font-medium text-white max-w-md truncate" title={q.question}>
-                            {q.question}
+                        <TableCell className="font-medium text-white max-w-md truncate">
+                            <span title={q.question}>{q.question}</span>
                         </TableCell>
                         <TableCell>{q.category}</TableCell>
                         <TableCell>
@@ -82,7 +113,10 @@ export default function AptitudeManagement() {
                         </TableCell>
                         <TableCell>
                             <div className="flex items-center gap-2">
-                                <button className="p-1.5 text-white/50 hover:text-brand-400 hover:bg-white/5 rounded-md transition-colors">
+                                <button 
+                                    onClick={() => openEditModal(q)}
+                                    className="p-1.5 text-white/50 hover:text-brand-400 hover:bg-white/5 rounded-md transition-colors"
+                                >
                                     <Edit2 className="w-4 h-4" />
                                 </button>
                                 <button
@@ -99,16 +133,18 @@ export default function AptitudeManagement() {
 
             <Modal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title="Add Aptitude Question"
+                onClose={closeModal}
+                title={editingId ? "Edit Question" : "Add Aptitude Question"}
                 footer={
                     <>
-                        <Button variant="outline" className="text-sm px-4 py-2 h-auto" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                        <Button variant="primary" className="text-sm px-4 py-2 h-auto" onClick={handleAddQuestion}>Save Question</Button>
+                        <Button variant="outline" className="text-sm px-4 py-2 h-auto" onClick={closeModal}>Cancel</Button>
+                        <Button variant="primary" className="text-sm px-4 py-2 h-auto" onClick={handleSaveQuestion}>
+                            {editingId ? "Save Changes" : "Save Question"}
+                        </Button>
                     </>
                 }
             >
-                <form id="add-question-form" onSubmit={handleAddQuestion} className="space-y-4">
+                <form id="add-question-form" onSubmit={handleSaveQuestion} className="space-y-4">
                     <FormInput
                         label="Question Text"
                         id="question"

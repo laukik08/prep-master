@@ -4,32 +4,32 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     LayoutDashboard,
-    HelpCircle,
     Code2,
+    HelpCircle,
     Building2,
-    Users,
     LineChart,
-    Settings,
+    FileText,
+    User,
     LogOut,
     X
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const navItems = [
-    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { name: 'Aptitude Questions', href: '/admin/aptitude', icon: HelpCircle },
-    { name: 'Coding Problems', href: '/admin/coding', icon: Code2 },
-    { name: 'Companies', href: '/admin/companies', icon: Building2 },
-    { name: 'Students', href: '/admin/students', icon: Users },
-    { name: 'Analytics', href: '/admin/analytics', icon: LineChart },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'DSA Practice', href: '/dashboard/practice', icon: Code2 },
+    { name: 'Aptitude Practice', href: '/dashboard/aptitude', icon: HelpCircle },
+    { name: 'Companies', href: '/dashboard/companies', icon: Building2 },
+    { name: 'Progress', href: '/dashboard/progress', icon: LineChart },
+    { name: 'Mock Tests', href: '/dashboard/mock-tests', icon: FileText },
 ];
 
-export function Sidebar({ isOpen, onClose, isDesktopExpanded = true }: { isOpen?: boolean; onClose?: () => void; isDesktopExpanded?: boolean }) {
+export function StudentSidebar({ isOpen, onClose, isDesktopExpanded = true }: { isOpen?: boolean; onClose?: () => void; isDesktopExpanded?: boolean }) {
     const pathname = usePathname();
 
     const SidebarContent = (
         <aside className={`${isDesktopExpanded ? 'w-64' : 'w-20'} transition-all duration-300 bg-[#0a0618] border-r border-white/10 flex flex-col h-[calc(100vh-4rem)]`}>
-            <div className="flex-1 py-6 px-4 overflow-y-auto">
+            <div className="flex-1 py-6 px-4 overflow-y-auto nice-scrollbar">
                 {/* Mobile Close Button */}
                 <div className="md:hidden flex justify-end mb-4">
                     <button onClick={onClose} className="p-2 text-white/50 hover:text-white bg-white/5 rounded-full">
@@ -38,7 +38,7 @@ export function Sidebar({ isOpen, onClose, isDesktopExpanded = true }: { isOpen?
                 </div>
                 <div className="space-y-1.5">
                     {navItems.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                         const Icon = item.icon;
 
                         return (
@@ -62,12 +62,12 @@ export function Sidebar({ isOpen, onClose, isDesktopExpanded = true }: { isOpen?
 
             <div className={`p-4 border-t border-white/10 space-y-1 ${!isDesktopExpanded ? 'flex flex-col items-center px-2' : ''}`}>
                 <Link
-                    href="/admin/settings"
+                    href="/dashboard/profile"
                     className={`flex items-center rounded-lg text-sm hover:bg-white/5 transition-colors ${isDesktopExpanded ? 'gap-3 px-3 py-2.5 text-white/60 hover:text-white' : 'justify-center p-3 text-white/50 hover:text-white/80'}`}
-                    title={!isDesktopExpanded ? "Settings" : undefined}
+                    title={!isDesktopExpanded ? "Profile" : undefined}
                 >
-                    <Settings className={`w-4 h-4 ${isDesktopExpanded ? 'text-white/40' : ''}`} />
-                    {isDesktopExpanded && <span>Settings</span>}
+                    <User className={`w-4 h-4 ${isDesktopExpanded ? 'text-white/40' : ''}`} />
+                    {isDesktopExpanded && <span>Profile</span>}
                 </Link>
                 <Link
                     href="/"

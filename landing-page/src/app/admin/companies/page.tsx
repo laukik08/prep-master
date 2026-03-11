@@ -6,8 +6,16 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/admin/ui/Modal';
 import { FormInput } from '@/components/admin/ui/FormComponents';
 
+interface CompanyData {
+    id: number;
+    name: string;
+    aptitude: number;
+    coding: number;
+    color: string;
+}
+
 // Mock Data
-const initialCompanies = [
+const initialCompanies: CompanyData[] = [
     { id: 1, name: "TCS", aptitude: 145, coding: 45, color: "from-blue-500 to-cyan-500" },
     { id: 2, name: "Infosys", aptitude: 120, coding: 30, color: "from-blue-600 to-indigo-600" },
     { id: 3, name: "Capgemini", aptitude: 210, coding: 15, color: "from-emerald-400 to-cyan-400" },
@@ -16,6 +24,9 @@ const initialCompanies = [
 ];
 
 export default function CompanyManagement() {
+    const [companies, setCompanies] = useState<CompanyData[]>(initialCompanies);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [formData, setFormData] = useState({ name: '', color: 'from-blue-500 to-cyan-500' });
     const [editingId, setEditingId] = useState<number | null>(null);
 
     const handleSaveCompany = (e: React.FormEvent) => {
@@ -93,14 +104,14 @@ export default function CompanyManagement() {
                         </div>
 
                         <div className="flex gap-2 w-full mt-auto pt-2">
-                            <button
-                                onClick={() => openEditModal(company)}
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); openEditModal(company); }}
                                 className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-sm font-medium transition-colors flex justify-center items-center gap-2 border border-white/5 hover:border-white/10"
                             >
                                 <Edit2 className="w-3.5 h-3.5" /> Edit
                             </button>
                             <button
-                                onClick={() => setCompanies(companies.filter(c => c.id !== company.id))}
+                                onClick={(e) => { e.stopPropagation(); setCompanies(companies.filter(c => c.id !== company.id)); }}
                                 className="flex-1 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-sm font-medium transition-colors flex justify-center items-center gap-2 border border-red-500/20"
                             >
                                 <Trash2 className="w-3.5 h-3.5" /> Delete
