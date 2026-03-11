@@ -9,9 +9,14 @@ const app = express();
 
 // ─── Global Middleware ───────────────────────────────────────
 app.use(helmet());
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
+  origin: [
+    "http://localhost:3000",
+    "https://prep-master-rgvtconkc-luckykhake800-7075s-projects.vercel.app",
+    "https://prepmaster.laukik-khake.in"
+  ],
+  credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
