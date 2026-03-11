@@ -11,11 +11,19 @@ const app = express();
 app.use(helmet());
 
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://prep-master-rgvtconkc-luckykhake800-7075s-projects.vercel.app",
-    "https://prepmaster.laukik-khake.in"
-  ],
+  origin: function (origin, callback) {
+    const allowed = [
+      "http://localhost:3000",
+      "https://prepmaster.laukik-khake.in"
+    ];
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    // Allow any *.vercel.app subdomain
+    if (/\.vercel\.app$/.test(origin) || allowed.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error("Not allowed by CORS"));
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
