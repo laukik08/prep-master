@@ -9,7 +9,7 @@ const fadeUp = {
     visible: (i: number) => ({
         opacity: 1,
         y: 0,
-        transition: { duration: 0.7, delay: i * 0.15, ease: [0.25, 0.46, 0.45, 0.94] },
+        transition: { duration: 0.7, delay: i * 0.15, ease: [0.25, 0.46, 0.45, 0.94] as any },
     }),
 };
 
@@ -92,7 +92,7 @@ export function HeroSection() {
             <motion.div
                 initial={{ opacity: 0, y: 60, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 1.2, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                transition={{ duration: 1.2, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as any }}
                 style={{ scale: editorScale }}
                 className="w-full max-w-5xl mx-auto mt-20 relative z-10"
             >

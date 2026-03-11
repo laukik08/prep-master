@@ -1,71 +1,96 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Table, TableRow, TableCell } from '@/components/admin/ui/Table';
 import { Modal } from '@/components/admin/ui/Modal';
 import { FormInput, FormSelect } from '@/components/admin/ui/FormComponents';
-
-// Mock Data
-const initialQuestions = [
-    { id: 1, question: "A train running at the speed of 60 km/hr crosses a pole in 9 seconds. What is the length of the train?", category: "Quantitative", difficulty: "Medium" },
-    { id: 2, question: "Find the missing number in the series: 2, 5, 10, 17, 26, ?", category: "Logical", difficulty: "Easy" },
-    { id: 3, question: "A can do a work in 15 days and B in 20 days. If they work on it together for 4 days, then the fraction of the work that is left is:", category: "Quantitative", difficulty: "Hard" },
-    { id: 4, question: "Choose the word which is the exact OPPOSITE of the word ENORMOUS.", category: "Verbal", difficulty: "Easy" },
-    { id: 5, question: "If 'A' means 'add', 'B' means 'subtract', 'C' means 'multiply' and 'D' means 'divide', what is 10 C 4 A 4 C 4 B 6?", category: "Logical", difficulty: "Medium" },
-];
+import { api } from '@/lib/api';
 
 export default function AptitudeManagement() {
-    const [questions, setQuestions] = useState(initialQuestions);
+    const [questions, setQuestions] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    // Form State
     const [formData, setFormData] = useState({
         question: '',
         optionA: '',
         optionB: '',
         optionC: '',
         optionD: '',
-        correctAnswer: 'A',
+        correctAnswer: '0',
         category: 'Quantitative',
         difficulty: 'Medium',
     });
 
-    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
-    const handleSaveQuestion = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (editingId) {
-            setQuestions(questions.map(q => 
-                q.id === editingId ? { ...q, question: formData.question, category: formData.category, difficulty: formData.difficulty } : q
-            ));
-        } else {
-            const newQuestion = {
-                id: Date.now(),
-                question: formData.question,
-                category: formData.category,
-                difficulty: formData.difficulty,
-            };
-            setQuestions([newQuestion, ...questions]);
+    useEffect(() => {
+        fetchQuestions();
+    }, []);
+
+    const fetchQuestions = async () => {
+        try {
+            const data = await api.getAptitude();
+            setQuestions(data);
+        } catch (err) {
+            console.error('Failed to fetch questions:', err);
+        } finally {
+            setLoading(false);
         }
-        closeModal();
+    };
+
+    const handleSaveQuestion = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const payload = {
+            question: formData.question,
+            options: [formData.optionA, formData.optionB, formData.optionC, formData.optionD],
+            correct_answer: parseInt(formData.correctAnswer),
+            category: formData.category,
+            difficulty: formData.difficulty,
+        };
+        try {
+            if (editingId) {
+                await api.updateAptitude(editingId, payload);
+            } else {
+                await api.createAptitude(payload);
+            }
+            await fetchQuestions();
+            closeModal();
+        } catch (err: any) {
+            console.error('Failed to save question:', err);
+            alert(err.error || err.message || 'Failed to save question');
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            await api.deleteAptitude(id);
+            setQuestions(questions.filter(q => q.id !== id));
+        } catch (err: any) {
+            console.error('Failed to delete question:', err);
+            alert(err.error || err.message || 'Failed to delete question');
+        }
     };
 
     const openEditModal = (questionObj: any) => {
         setEditingId(questionObj.id);
-        setFormData({ 
-            question: questionObj.question, 
-            optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A', // Mock option handling since we don't store them in initial array
-            category: questionObj.category, 
-            difficulty: questionObj.difficulty 
+        const opts = questionObj.options || [];
+        setFormData({
+            question: questionObj.question,
+            optionA: opts[0] || '', optionB: opts[1] || '',
+            optionC: opts[2] || '', optionD: opts[3] || '',
+            correctAnswer: String(questionObj.correct_answer ?? 0),
+            category: questionObj.category,
+            difficulty: questionObj.difficulty,
         });
         setIsModalOpen(true);
     };
 
     const openAddModal = () => {
         setEditingId(null);
-        setFormData({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A', category: 'Quantitative', difficulty: 'Medium' });
+        setFormData({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: '0', category: 'Quantitative', difficulty: 'Medium' });
         setIsModalOpen(true);
     };
 
@@ -73,7 +98,7 @@ export default function AptitudeManagement() {
         setIsModalOpen(false);
         setTimeout(() => {
             setEditingId(null);
-            setFormData({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A', category: 'Quantitative', difficulty: 'Medium' });
+            setFormData({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: '0', category: 'Quantitative', difficulty: 'Medium' });
         }, 200);
     };
 
@@ -99,37 +124,35 @@ export default function AptitudeManagement() {
                 </Button>
             </div>
 
-            <Table headers={['Question', 'Category', 'Difficulty', 'Actions']}>
-                {questions.map((q) => (
-                    <TableRow key={q.id}>
-                        <TableCell className="font-medium text-white max-w-md truncate">
-                            <span title={q.question}>{q.question}</span>
-                        </TableCell>
-                        <TableCell>{q.category}</TableCell>
-                        <TableCell>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getDifficultyColor(q.difficulty)}`}>
-                                {q.difficulty}
-                            </span>
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={() => openEditModal(q)}
-                                    className="p-1.5 text-white/50 hover:text-brand-400 hover:bg-white/5 rounded-md transition-colors"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => setQuestions(questions.filter(item => item.id !== q.id))}
-                                    className="p-1.5 text-white/50 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </TableCell>
-                    </TableRow>
-                ))}
-            </Table>
+            {loading ? (
+                <div className="text-center py-20 text-white/50">Loading questions...</div>
+            ) : (
+                <Table headers={['Question', 'Category', 'Difficulty', 'Actions']}>
+                    {questions.map((q) => (
+                        <TableRow key={q.id}>
+                            <TableCell className="font-medium text-white max-w-md truncate">
+                                <span title={q.question}>{q.question}</span>
+                            </TableCell>
+                            <TableCell>{q.category}</TableCell>
+                            <TableCell>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getDifficultyColor(q.difficulty)}`}>
+                                    {q.difficulty}
+                                </span>
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => openEditModal(q)} className="p-1.5 text-white/50 hover:text-brand-400 hover:bg-white/5 rounded-md transition-colors">
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => handleDelete(q.id)} className="p-1.5 text-white/50 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </Table>
+            )}
 
             <Modal
                 isOpen={isModalOpen}
@@ -145,14 +168,7 @@ export default function AptitudeManagement() {
                 }
             >
                 <form id="add-question-form" onSubmit={handleSaveQuestion} className="space-y-4">
-                    <FormInput
-                        label="Question Text"
-                        id="question"
-                        placeholder="Type the question here..."
-                        value={formData.question}
-                        onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                        required
-                    />
+                    <FormInput label="Question Text" id="question" placeholder="Type the question here..." value={formData.question} onChange={(e) => setFormData({ ...formData, question: e.target.value })} required />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormInput label="Option A" id="optionA" value={formData.optionA} onChange={(e) => setFormData({ ...formData, optionA: e.target.value })} required />
                         <FormInput label="Option B" id="optionB" value={formData.optionB} onChange={(e) => setFormData({ ...formData, optionB: e.target.value })} required />
@@ -160,37 +176,14 @@ export default function AptitudeManagement() {
                         <FormInput label="Option D" id="optionD" value={formData.optionD} onChange={(e) => setFormData({ ...formData, optionD: e.target.value })} required />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormSelect
-                            label="Correct Answer"
-                            id="correctAnswer"
-                            value={formData.correctAnswer}
-                            onChange={(e) => setFormData({ ...formData, correctAnswer: e.target.value })}
-                            options={[
-                                { value: 'A', label: 'Option A' }, { value: 'B', label: 'Option B' },
-                                { value: 'C', label: 'Option C' }, { value: 'D', label: 'Option D' }
-                            ]}
+                        <FormSelect label="Correct Answer" id="correctAnswer" value={formData.correctAnswer} onChange={(e) => setFormData({ ...formData, correctAnswer: e.target.value })}
+                            options={[{ value: '0', label: 'Option A' }, { value: '1', label: 'Option B' }, { value: '2', label: 'Option C' }, { value: '3', label: 'Option D' }]}
                         />
-                        <FormSelect
-                            label="Category"
-                            id="category"
-                            value={formData.category}
-                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            options={[
-                                { value: 'Quantitative', label: 'Quantitative' },
-                                { value: 'Logical', label: 'Logical' },
-                                { value: 'Verbal', label: 'Verbal' }
-                            ]}
+                        <FormSelect label="Category" id="category" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                            options={[{ value: 'Quantitative', label: 'Quantitative' }, { value: 'Logical', label: 'Logical' }, { value: 'Verbal', label: 'Verbal' }]}
                         />
-                        <FormSelect
-                            label="Difficulty"
-                            id="difficulty"
-                            value={formData.difficulty}
-                            onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                            options={[
-                                { value: 'Easy', label: 'Easy' },
-                                { value: 'Medium', label: 'Medium' },
-                                { value: 'Hard', label: 'Hard' }
-                            ]}
+                        <FormSelect label="Difficulty" id="difficulty" value={formData.difficulty} onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                            options={[{ value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }]}
                         />
                     </div>
                 </form>

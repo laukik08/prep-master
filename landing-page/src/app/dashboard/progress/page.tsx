@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { Target, TrendingUp, Award, Activity } from 'lucide-react';
 import { StatCard } from '@/components/admin/ui/StatCard';
+import { api } from '@/lib/api';
 
 const activityData = [
     { name: 'Mon', problems: 4, hours: 2, aptitude: 15 },
@@ -33,6 +34,12 @@ const mockTestsProgress = [
 ];
 
 export default function ProgressPage() {
+    const [progress, setProgress] = useState<any>(null);
+
+    useEffect(() => {
+        api.getStudentProgress().then(setProgress).catch(console.error);
+    }, []);
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-8">
             <div>
@@ -45,25 +52,23 @@ export default function ProgressPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard 
-                    title="Current Streak" 
-                    value="12 Days" 
+                    title="Problems Solved" 
+                    value={progress?.problems_solved ?? '—'} 
                     icon={TrendingUp} 
-                    trend={{ value: 'Top 5', isPositive: true }} 
                 />
                 <StatCard 
-                    title="Total Practice Time" 
-                    value="48.5 hrs" 
+                    title="Total Submissions" 
+                    value={progress?.total_submissions ?? '—'} 
                     icon={Target} 
                 />
                 <StatCard 
-                    title="Overall Accuracy" 
-                    value="84%" 
+                    title="Aptitude Accuracy" 
+                    value={`${progress?.aptitude_accuracy ?? '—'}%`} 
                     icon={Award} 
-                    trend={{ value: '2.5', isPositive: true }} 
                 />
                 <StatCard 
-                    title="Mock Tests Avg." 
-                    value="75/100" 
+                    title="Company Readiness" 
+                    value={`${progress?.company_readiness ?? '—'}%`} 
                     icon={Activity} 
                 />
             </div>

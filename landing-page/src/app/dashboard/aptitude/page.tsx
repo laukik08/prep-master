@@ -1,37 +1,33 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PlayCircle, Clock, CheckCircle2, XCircle, ArrowRight, ArrowLeft, RefreshCcw } from 'lucide-react';
+import { PlayCircle, Clock, ArrowRight, ArrowLeft, RefreshCcw } from 'lucide-react';
+import { api } from '@/lib/api';
 
-const mockQuestions = [
-    {
-        id: 1,
-        category: 'Quantitative Aptitude',
-        text: 'Two pipes A and B can fill a tank in 20 and 30 minutes respectively. If both the pipes are used together, then how long will it take to fill the tank?',
-        options: ['10 mins', '12 mins', '15 mins', '25 mins'],
-        correctAnswer: 1 // index 1 is '12 mins'
-    },
-    {
-        id: 2,
-        category: 'Logical Reasoning',
-        text: 'Look at this series: 2, 1, (1/2), (1/4), ... What number should come next?',
-        options: ['(1/3)', '(1/8)', '(2/8)', '(1/16)'],
-        correctAnswer: 1 // index 1 is '(1/8)'
-    },
-    {
-        id: 3,
-        category: 'Verbal Ability',
-        text: 'Find the correctly spelt word.',
-        options: ['Ommission', 'Omision', 'Omission', 'Ommision'],
-        correctAnswer: 2 // index 2 is 'Omission'
-    }
-];
+interface Question {
+    id: string;
+    category: string;
+    question: string;
+    options: string[];
+    correct_answer: number;
+    difficulty: string;
+}
 
 export default function AptitudePracticePage() {
+    const [allQuestions, setAllQuestions] = useState<Question[]>([]);
+    const [testQuestions, setTestQuestions] = useState<Question[]>([]);
     const [testState, setTestState] = useState<'idle' | 'running' | 'completed'>('idle');
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<number, number>>({});
-    const [timeLeft, setTimeLeft] = useState(5 * 60); // 5 minutes
+    const [timeLeft, setTimeLeft] = useState(5 * 60);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        api.getAptitude()
+            .then((data: Question[]) => setAllQuestions(data || []))
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, []);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -50,14 +46,11 @@ export default function AptitudePracticePage() {
     };
 
     const handleSelectOption = (optIndex: number) => {
-        setAnswers({
-            ...answers,
-            [currentQuestionIndex]: optIndex
-        });
+        setAnswers({ ...answers, [currentQuestionIndex]: optIndex });
     };
 
     const handleNext = () => {
-        if (currentQuestionIndex < mockQuestions.length - 1) {
+        if (currentQuestionIndex < testQuestions.length - 1) {
             setCurrentQuestionIndex(prev => prev + 1);
         } else {
             setTestState('completed');
@@ -70,31 +63,56 @@ export default function AptitudePracticePage() {
         }
     };
 
+    const startTest = (category?: string) => {
+        let qs = allQuestions;
+        if (category) qs = allQuestions.filter(q => q.category === category);
+        if (qs.length === 0) qs = allQuestions; // fallback
+        setTestQuestions(qs.slice(0, 10)); // max 10 per test
+        setTestState('running');
+        setTimeLeft(5 * 60);
+        setCurrentQuestionIndex(0);
+        setAnswers({});
+    };
+
     const calculateResult = () => {
         let correct = 0;
-        mockQuestions.forEach((q, idx) => {
-            if (answers[idx] === q.correctAnswer) correct++;
+        testQuestions.forEach((q, idx) => {
+            if (answers[idx] === q.correct_answer) correct++;
         });
         return {
             correct,
-            total: mockQuestions.length,
-            accuracy: Math.round((correct / mockQuestions.length) * 100)
+            total: testQuestions.length,
+            accuracy: testQuestions.length > 0 ? Math.round((correct / testQuestions.length) * 100) : 0
         };
     };
+
+    // Count per category
+    const categoryCounts: Record<string, number> = {};
+    allQuestions.forEach(q => {
+        categoryCounts[q.category] = (categoryCounts[q.category] || 0) + 1;
+    });
+
+    // Loading state
+    if (loading) {
+        return <div className="text-center py-20 text-white/50 animate-in fade-in">Loading questions from database...</div>;
+    }
 
     // View State: Welcome / Category Selection
     if (testState === 'idle') {
         const categories = [
-            { name: 'Quantitative Aptitude', questions: 45, time: '60 mins', color: 'text-blue-400 bg-blue-500/10' },
-            { name: 'Logical Reasoning', questions: 30, time: '45 mins', color: 'text-purple-400 bg-purple-500/10' },
-            { name: 'Verbal Ability', questions: 40, time: '40 mins', color: 'text-green-400 bg-green-500/10' },
+            { name: 'Quantitative', color: 'text-blue-400 bg-blue-500/10' },
+            { name: 'Logical', color: 'text-purple-400 bg-purple-500/10' },
+            { name: 'Verbal', color: 'text-green-400 bg-green-500/10' },
         ];
 
         return (
             <div className="space-y-8 animate-in fade-in duration-500 max-w-5xl mx-auto py-8">
                 <div className="text-center space-y-4">
                     <h1 className="text-4xl font-bold text-white tracking-tight">Aptitude Practice Tests</h1>
-                    <p className="text-white/60 max-w-lg mx-auto">Enhance your problem-solving speed and logical thinking with our curated category-wise tests tailored for company placements.</p>
+                    <p className="text-white/60 max-w-lg mx-auto">Enhance your problem-solving speed and logical thinking with category-wise tests from the database ({allQuestions.length} questions available).</p>
+                    {allQuestions.length === 0 && (
+                        <p className="text-brand-400 text-sm mt-2">No problems seeded in the database. Please contact an admin.</p>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
@@ -106,17 +124,10 @@ export default function AptitudePracticePage() {
                             </div>
                             <h3 className="text-xl font-bold text-white mb-2">{cat.name}</h3>
                             <div className="flex gap-4 text-sm font-medium text-white/50 mb-8">
-                                <span>{cat.questions} Qs</span>
-                                <span>•</span>
-                                <span>{cat.time}</span>
+                                <span>{categoryCounts[cat.name] || 0} Qs</span>
                             </div>
                             <button 
-                                onClick={() => {
-                                    setTestState('running');
-                                    setTimeLeft(5 * 60); // Reset for demo
-                                    setCurrentQuestionIndex(0);
-                                    setAnswers({});
-                                }} 
+                                onClick={() => startTest(cat.name)} 
                                 className="w-full py-3 bg-brand-500 hover:bg-brand-400 text-white rounded-xl transition-colors font-medium relative z-10"
                             >
                                 Start Test
@@ -128,7 +139,7 @@ export default function AptitudePracticePage() {
         );
     }
 
-    const currentQ = mockQuestions[currentQuestionIndex];
+    const currentQ = testQuestions[currentQuestionIndex];
     const { correct, total, accuracy } = calculateResult();
 
     // View State: Test Results
@@ -136,16 +147,14 @@ export default function AptitudePracticePage() {
         return (
             <div className="max-w-3xl mx-auto py-12 animate-in slide-in-from-bottom-8 duration-500">
                 <div className="bg-[#0a0618] border border-white/10 rounded-3xl p-8 sm:p-12 text-center shadow-2xl relative overflow-hidden">
-                    {/* Decorative glow */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
-                    
                     <div className="relative z-10 space-y-8">
                         <div>
                             <div className="w-24 h-24 mx-auto bg-green-500/10 text-green-400 rounded-full flex items-center justify-center mb-6 ring-4 ring-green-500/20">
                                 <AwardIcon className="w-12 h-12" />
                             </div>
                             <h2 className="text-3xl font-bold text-white mb-2">Test Completed!</h2>
-                            <p className="text-white/60">Here is your performance summary for this mock test.</p>
+                            <p className="text-white/60">Here is your performance summary for this test.</p>
                         </div>
 
                         <div className="grid grid-cols-3 gap-4">
@@ -170,9 +179,6 @@ export default function AptitudePracticePage() {
                             >
                                 <RefreshCcw className="w-4 h-4" /> Try Another Test
                             </button>
-                            <button className="px-6 py-3 rounded-xl bg-brand-500 hover:bg-brand-400 text-white font-medium transition-colors shadow-lg shadow-brand-500/25">
-                                Review Answers
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -180,28 +186,27 @@ export default function AptitudePracticePage() {
         );
     }
 
+    if (!currentQ) return null;
+
     // View State: Test Running
     return (
         <div className="h-[calc(100vh-6rem)] flex flex-col max-w-4xl mx-auto animate-in fade-in">
-            {/* Header */}
             <div className="bg-[#0a0618] border border-white/10 rounded-2xl p-4 flex items-center justify-between shadow-lg shrink-0 mb-6">
                 <div className="flex items-center gap-4">
                     <span className="text-white font-bold">{currentQ.category}</span>
-                    <span className="text-white/40 text-sm">Question {currentQuestionIndex + 1} of {mockQuestions.length}</span>
+                    <span className="text-white/40 text-sm">Question {currentQuestionIndex + 1} of {testQuestions.length}</span>
                 </div>
                 <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-mono text-sm font-bold ${timeLeft < 60 ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-brand-500/20 text-brand-400'}`}>
                     <Clock className="w-4 h-4" /> {formatTime(timeLeft)}
                 </div>
             </div>
 
-            {/* Question Body */}
             <div className="flex-1 overflow-y-auto w-full bg-[#0a0618] border border-white/10 rounded-2xl p-8 lg:p-12 shadow-2xl space-y-8 relative">
                 <p className="text-xl md:text-2xl font-medium text-white/90 leading-relaxed">
-                    {currentQ.text}
+                    {currentQ.question}
                 </p>
-
                 <div className="space-y-4 pt-4">
-                    {currentQ.options.map((opt, idx) => {
+                    {(currentQ.options || []).map((opt: string, idx: number) => {
                         const isSelected = answers[currentQuestionIndex] === idx;
                         return (
                             <div 
@@ -226,7 +231,6 @@ export default function AptitudePracticePage() {
                 </div>
             </div>
 
-            {/* Footer Navigation */}
             <div className="flex items-center justify-between shrink-0 mt-6 pb-8">
                 <button 
                     onClick={handlePrev}
@@ -236,9 +240,8 @@ export default function AptitudePracticePage() {
                     <ArrowLeft className="w-4 h-4" /> Previous
                 </button>
 
-                {/* Progress Indicators */}
                 <div className="flex gap-2">
-                    {mockQuestions.map((_, i) => (
+                    {testQuestions.map((_: Question, i: number) => (
                         <div 
                             key={i} 
                             onClick={() => setCurrentQuestionIndex(i)}
@@ -260,15 +263,14 @@ export default function AptitudePracticePage() {
                     onClick={handleNext}
                     className="px-8 py-3 rounded-xl bg-brand-500 hover:bg-brand-400 text-white shadow-lg shadow-brand-500/20 font-medium transition-colors flex items-center gap-2"
                 >
-                    {currentQuestionIndex === mockQuestions.length - 1 ? 'Submit Test' : 'Next Question'} 
-                    {currentQuestionIndex < mockQuestions.length - 1 && <ArrowRight className="w-4 h-4" />}
+                    {currentQuestionIndex === testQuestions.length - 1 ? 'Submit Test' : 'Next Question'} 
+                    {currentQuestionIndex < testQuestions.length - 1 && <ArrowRight className="w-4 h-4" />}
                 </button>
             </div>
         </div>
     );
 }
 
-// Inline Award Icon since lucide might conflict heavily today with basic 'Award'
 function AwardIcon({ className }: { className?: string }) {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>

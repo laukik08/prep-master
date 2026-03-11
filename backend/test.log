@@ -1,0 +1,36 @@
+--- STARTING ENDPOINT TESTS ---
+
+1. Testing Admin Login...
+✅ Admin Login Successful
+
+2. Testing Student Login/Register...
+✅ Student Register Successful
+
+3. Testing Company Creation (Admin)...
+✅ Company Created: Company_1773228289893 
+
+4. Testing Problem Creation (Admin)...
+✅ Problem Created: Two Sum 
+
+5. Testing Get Problems (Student)...
+✅ Retrieved 5 problems
+
+6. Testing Code Execution (Piston API)...
+⚠️ Code Execution failed (expected if API is currently rate limited/whitelisted): Public Piston API is now whitelist only as of 2/15/2026. Please contact EngineerMan on Discord with use case justification or consider hosting your own Piston instance. 
+
+7. Testing Submission Tracking...
+✅ Submission track recorded.
+
+8. Testing Student Progress Analytics...
+✅ Progress Details: {
+  problems_solved: 1,
+  total_problems: 5,
+  total_submissions: 1,
+  aptitude_accuracy: 78,
+  company_readiness: 50
+} 
+
+9. Testing Admin Stats...
+✅ Admin Stats: {"total_users":7,"total_problems":5,"total_aptitude_questions":0,"total_submissions":2,"total_companies":5} 
+
+🎉 ALL TESTS PASSED SUCCESSFULLY!

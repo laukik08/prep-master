@@ -1,70 +1,92 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Table, TableRow, TableCell } from '@/components/admin/ui/Table';
 import { Modal } from '@/components/admin/ui/Modal';
 import { FormInput, FormSelect, FormTextarea } from '@/components/admin/ui/FormComponents';
-
-// Mock Data
-const initialProblems = [
-    { id: 1, title: "Two Sum", difficulty: "Easy", topic: "Arrays & Hashing" },
-    { id: 2, title: "Longest Substring Without Repeating Characters", difficulty: "Medium", topic: "Sliding Window" },
-    { id: 3, title: "Median of Two Sorted Arrays", difficulty: "Hard", topic: "Binary Search" },
-    { id: 4, title: "Valid Parentheses", difficulty: "Easy", topic: "Stack" },
-    { id: 5, title: "Merge k Sorted Lists", difficulty: "Hard", topic: "Linked List, Heap" },
-];
+import { api } from '@/lib/api';
 
 export default function CodingProblemsManagement() {
-    const [problems, setProblems] = useState(initialProblems);
+    const [problems, setProblems] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    // Add Problem Form State
     const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        difficulty: 'Medium',
-        topic: '',
-        constraints: '',
-        exampleInput: '',
-        exampleOutput: '',
-        visibleTestCases: '',
-        hiddenTestCases: ''
+        title: '', description: '', difficulty: 'Medium', topic: '',
+        constraints: '', exampleInput: '', exampleOutput: '',
+        visibleTestCases: '', hiddenTestCases: ''
     });
 
-    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
-    const handleSaveProblem = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (editingId) {
-            setProblems(problems.map(p => 
-                p.id === editingId ? { ...p, title: formData.title, difficulty: formData.difficulty, topic: formData.topic || 'General' } : p
-            ));
-        } else {
-            const newProblem = {
-                id: Date.now(),
-                title: formData.title,
-                difficulty: formData.difficulty,
-                topic: formData.topic || 'General',
-            };
-            setProblems([newProblem, ...problems]);
+    useEffect(() => {
+        fetchProblems();
+    }, []);
+
+    const fetchProblems = async () => {
+        try {
+            const data = await api.getProblems();
+            setProblems(data);
+        } catch (err) {
+            console.error('Failed to fetch problems:', err);
+        } finally {
+            setLoading(false);
         }
-        closeModal();
+    };
+
+    const handleSaveProblem = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const payload = {
+            title: formData.title,
+            description: formData.description,
+            difficulty: formData.difficulty,
+            topics: formData.topic ? formData.topic.split(',').map(t => t.trim()) : [],
+            constraints: formData.constraints,
+            example_input: formData.exampleInput,
+            example_output: formData.exampleOutput,
+            test_cases: [
+                { input: formData.visibleTestCases, expected: formData.hiddenTestCases }
+            ],
+            companies: [],
+            initial_code: "function solution() {\n  // Write your code here\n}"
+        };
+        try {
+            if (editingId) {
+                await api.updateProblem(editingId, payload);
+            } else {
+                await api.createProblem(payload);
+            }
+            await fetchProblems();
+            closeModal();
+        } catch (err: any) {
+            console.error('Failed to save problem:', err);
+            alert(err.error || err.message || 'Failed to save problem');
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            await api.deleteProblem(id);
+            setProblems(problems.filter(p => p.id !== id));
+        } catch (err: any) {
+            console.error('Failed to delete problem:', err);
+            alert(err.error || err.message || 'Failed to delete problem');
+        }
     };
 
     const openEditModal = (problemObj: any) => {
         setEditingId(problemObj.id);
-        setFormData({ 
-            title: problemObj.title, 
-            description: '', // Mocked detail
-            difficulty: problemObj.difficulty, 
-            topic: problemObj.topic, 
-            constraints: '', 
-            exampleInput: '', 
-            exampleOutput: '', 
-            visibleTestCases: '', 
-            hiddenTestCases: '' 
+        setFormData({
+            title: problemObj.title,
+            description: problemObj.description || '',
+            difficulty: problemObj.difficulty,
+            topic: (problemObj.topics || []).join(', '),
+            constraints: problemObj.constraints || '',
+            exampleInput: problemObj.example_input || '',
+            exampleOutput: problemObj.example_output || '',
+            visibleTestCases: '', hiddenTestCases: ''
         });
         setIsModalOpen(true);
     };
@@ -105,35 +127,33 @@ export default function CodingProblemsManagement() {
                 </Button>
             </div>
 
-            <Table headers={['Problem Title', 'Difficulty', 'Topic', 'Actions']}>
-                {problems.map((p) => (
-                    <TableRow key={p.id}>
-                        <TableCell className="font-medium text-white">{p.title}</TableCell>
-                        <TableCell>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getDifficultyColor(p.difficulty)}`}>
-                                {p.difficulty}
-                            </span>
-                        </TableCell>
-                        <TableCell className="text-white/70">{p.topic}</TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={() => openEditModal(p)}
-                                    className="p-1.5 text-white/50 hover:text-brand-400 hover:bg-white/5 rounded-md transition-colors"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => setProblems(problems.filter(item => item.id !== p.id))}
-                                    className="p-1.5 text-white/50 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </TableCell>
-                    </TableRow>
-                ))}
-            </Table>
+            {loading ? (
+                <div className="text-center py-20 text-white/50">Loading problems...</div>
+            ) : (
+                <Table headers={['Problem Title', 'Difficulty', 'Topics', 'Actions']}>
+                    {problems.map((p) => (
+                        <TableRow key={p.id}>
+                            <TableCell className="font-medium text-white">{p.title}</TableCell>
+                            <TableCell>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getDifficultyColor(p.difficulty)}`}>
+                                    {p.difficulty}
+                                </span>
+                            </TableCell>
+                            <TableCell className="text-white/70">{(p.topics || []).join(', ')}</TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => openEditModal(p)} className="p-1.5 text-white/50 hover:text-brand-400 hover:bg-white/5 rounded-md transition-colors">
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => handleDelete(p.id)} className="p-1.5 text-white/50 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </Table>
+            )}
 
             <Modal
                 isOpen={isModalOpen}
@@ -153,29 +173,20 @@ export default function CodingProblemsManagement() {
                         <h3 className="text-sm font-semibold text-white/80 border-b border-white/10 pb-2">Basic Details</h3>
                         <FormInput label="Problem Title" id="title" placeholder="e.g. Two Sum" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormSelect
-                                label="Difficulty" id="difficulty" value={formData.difficulty} onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                            <FormSelect label="Difficulty" id="difficulty" value={formData.difficulty} onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                                 options={[{ value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }]}
                             />
                             <FormInput label="Topic Tags (comma separated)" id="topic" placeholder="Arrays, Hash Table" value={formData.topic} onChange={(e) => setFormData({ ...formData, topic: e.target.value })} />
                         </div>
-                        <FormTextarea label="Problem Description" id="description" placeholder="Describe the problem, input format, output format..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} required />
+                        <FormTextarea label="Problem Description" id="description" placeholder="Describe the problem..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} required />
                     </div>
 
                     <div className="space-y-4">
                         <h3 className="text-sm font-semibold text-white/80 border-b border-white/10 pb-2">Constraints & Examples</h3>
-                        <FormTextarea label="Constraints" id="constraints" placeholder="2 <= nums.length <= 10^4&#10;-10^9 <= nums[i] <= 10^9" value={formData.constraints} onChange={(e) => setFormData({ ...formData, constraints: e.target.value })} className="font-mono text-sm" />
+                        <FormTextarea label="Constraints" id="constraints" placeholder="2 <= nums.length <= 10^4" value={formData.constraints} onChange={(e) => setFormData({ ...formData, constraints: e.target.value })} className="font-mono text-sm" />
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormTextarea label="Example Input" id="exampleInput" placeholder="nums = [2,7,11,15], target = 9" value={formData.exampleInput} onChange={(e) => setFormData({ ...formData, exampleInput: e.target.value })} className="font-mono text-sm" />
                             <FormTextarea label="Example Output" id="exampleOutput" placeholder="[0,1]" value={formData.exampleOutput} onChange={(e) => setFormData({ ...formData, exampleOutput: e.target.value })} className="font-mono text-sm" />
-                        </div>
-                    </div>
-
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-white/80 border-b border-white/10 pb-2">Test Cases</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormTextarea label="Visible Test Cases (JSON)" id="visibleTestCases" placeholder="[{ input: '...', output: '...' }]" value={formData.visibleTestCases} onChange={(e) => setFormData({ ...formData, visibleTestCases: e.target.value })} className="font-mono text-sm text-brand-300" />
-                            <FormTextarea label="Hidden Test Cases (JSON)" id="hiddenTestCases" placeholder="[{ input: '...', output: '...' }]" value={formData.hiddenTestCases} onChange={(e) => setFormData({ ...formData, hiddenTestCases: e.target.value })} className="font-mono text-sm text-brand-300" />
                         </div>
                     </div>
                 </form>

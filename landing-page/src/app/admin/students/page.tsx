@@ -1,22 +1,29 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserX, ExternalLink, Download } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Table, TableRow, TableCell } from '@/components/admin/ui/Table';
-
-// Mock Data
-const initialStudents = [
-    { id: 1, name: "Rahul Sharma", email: "rahul.s@example.com", solved: 145, aptitude: 92, readiness: 85 },
-    { id: 2, name: "Priya Patel", email: "priya.p@example.com", solved: 210, aptitude: 88, readiness: 90 },
-    { id: 3, name: "Amit Kumar", email: "amit.k@example.com", solved: 45, aptitude: 55, readiness: 40 },
-    { id: 4, name: "Neha Gupta", email: "neha.g@example.com", solved: 320, aptitude: 95, readiness: 98 },
-    { id: 5, name: "Vikram Singh", email: "vikram.s@example.com", solved: 85, aptitude: 68, readiness: 65 },
-    { id: 6, name: "Anjali Desai", email: "anjali.d@example.com", solved: 180, aptitude: 82, readiness: 75 },
-];
+import { api } from '@/lib/api';
 
 export default function StudentsManagement() {
-    const [students, setStudents] = useState(initialStudents);
+    const [students, setStudents] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchStudents();
+    }, []);
+
+    const fetchStudents = async () => {
+        try {
+            const data = await api.getAdminUsers();
+            setStudents(data);
+        } catch (err) {
+            console.error('Failed to fetch students:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getCompanyReadinessColor = (readiness: number) => {
         if (readiness >= 85) return 'text-green-400';
@@ -43,18 +50,21 @@ export default function StudentsManagement() {
                 </Button>
             </div>
 
-            <Table headers={['Student', 'Progress Metrics', 'Company Readiness', 'Actions']}>
-                {students.map((student) => (
-                    <TableRow key={student.id}>
+            {loading ? (
+                <div className="text-center py-20 text-white/50">Loading users...</div>
+            ) : (
+                <Table headers={['Student', 'Progress Metrics', 'Company Readiness', 'Actions']}>
+                    {students.map((student) => (
+                        <TableRow key={student.id}>
 
                         {/* Student Info */}
                         <TableCell>
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-sm border border-brand-500/30">
-                                    {student.name.split(' ').map(n => n[0]).join('')}
+                                    {student.name ? student.name.split(' ').map((n: string) => n[0]).join('') : '?'}
                                 </div>
                                 <div>
-                                    <p className="font-medium text-white">{student.name}</p>
+                                    <p className="font-medium text-white">{student.name || 'Unknown User'}</p>
                                     <p className="text-xs text-white/50">{student.email}</p>
                                 </div>
                             </div>
@@ -105,6 +115,7 @@ export default function StudentsManagement() {
                     </TableRow>
                 ))}
             </Table>
+            )}
         </div>
     );
 }

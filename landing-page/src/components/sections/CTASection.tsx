@@ -31,7 +31,7 @@ export function CTASection() {
                 </motion.div>
 
                 {/* Dashboard Preview — Track Your Placement Progress */}
-                <motion.div style={{ y: mockupY }} initial={{ opacity: 0, scale: 0.92 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, margin: '-100px' }} transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }} className="relative max-w-5xl mx-auto -mb-10 lg:-mb-32">
+                <motion.div style={{ y: mockupY }} initial={{ opacity: 0, scale: 0.92 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, margin: '-100px' }} transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] as any }} className="relative max-w-5xl mx-auto -mb-10 lg:-mb-32">
                     <div className="text-center mb-4">
                         <p className="text-white/40 text-sm font-medium">Track Your Placement Progress</p>
                         <p className="text-white/30 text-xs">Monitor solved problems, aptitude scores, and company readiness in a powerful student dashboard.</p>

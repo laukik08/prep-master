@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import Providers from './providers';
 
 export const metadata: Metadata = {
-  title: 'Modern Landing Page',
-  description: 'Built with Next.js, Tailwind and Framer Motion',
+  title: 'PrepMaster – Placement Preparation Platform',
+  description: 'Your one-stop platform for placement preparation',
 };
 
 export default function RootLayout({
@@ -14,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark scroll-smooth">
       <body className="antialiased min-h-screen bg-[var(--color-background-primary)] text-white selection:bg-brand-500/30 font-sans">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

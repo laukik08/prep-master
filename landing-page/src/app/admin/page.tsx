@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Users, Code, CheckCircle, Target } from 'lucide-react';
 import { StatCard } from '@/components/admin/ui/StatCard';
 import { Table, TableRow, TableCell } from '@/components/admin/ui/Table';
@@ -9,6 +9,7 @@ import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
     LineChart, Line, CartesianGrid
 } from 'recharts';
+import { api } from '@/lib/api';
 
 const mockStudentActivity = [
     { id: 1, name: 'Alex Johnson', problems: 145, aptitude: 92, lastActive: '10 mins ago' },
@@ -36,6 +37,12 @@ const mockAptitudeData = [
 ];
 
 export default function AdminDashboard() {
+    const [stats, setStats] = useState<any>(null);
+
+    useEffect(() => {
+        api.getAdminStats().then(setStats).catch(console.error);
+    }, []);
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
@@ -47,25 +54,25 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Total Students"
-                    value="1,248"
+                    value={stats?.total_users ?? '—'}
                     icon={Users}
-                    trend={{ value: '12%', isPositive: true }}
+                    trend={{ value: 'Live', isPositive: true }}
                 />
                 <StatCard
                     title="Total Coding Problems"
-                    value="450+"
+                    value={stats?.total_problems ?? '—'}
                     icon={Code}
                 />
                 <StatCard
                     title="Total Aptitude Questions"
-                    value="1,200+"
+                    value={stats?.total_aptitude_questions ?? '—'}
                     icon={CheckCircle}
                 />
                 <StatCard
-                    title="Total Tests Attempted"
-                    value="8,432"
+                    title="Total Submissions"
+                    value={stats?.total_submissions ?? '—'}
                     icon={Target}
-                    trend={{ value: '24%', isPositive: true }}
+                    trend={{ value: 'Live', isPositive: true }}
                 />
             </div>
 

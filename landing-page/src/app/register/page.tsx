@@ -4,21 +4,32 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const { register } = useAuth();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         if (password !== confirmPassword) {
-            alert("Passwords do not match!");
+            setError("Passwords do not match!");
             return;
         }
-        // Simulate register
-        console.log('Registering user', { name, email, password });
+        setLoading(true);
+        try {
+            await register({ name, email, password });
+        } catch (err: any) {
+            setError(err.error || 'Registration failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -59,6 +70,12 @@ export default function RegisterPage() {
                     <h2 className="text-3xl font-bold text-white mb-2">Create an Account</h2>
                     <p className="text-white/50 text-sm">Join PrepMaster to start your placement journey</p>
                 </div>
+
+                {error && (
+                    <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+                        {error}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
@@ -122,8 +139,8 @@ export default function RegisterPage() {
                     </div>
 
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="pt-2">
-                        <Button variant="primary" className="w-full h-12 text-sm">
-                            Create Account
+                        <Button variant="primary" className="w-full h-12 text-sm" disabled={loading}>
+                            {loading ? 'Creating Account...' : 'Create Account'}
                         </Button>
                     </motion.div>
                 </form>

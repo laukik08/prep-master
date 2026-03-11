@@ -1,25 +1,30 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatCard } from '@/components/admin/ui/StatCard';
 import { CheckCircle2, Target, Award, Clock, ArrowUpRight, Flame, Code2, HelpCircle, Building2 } from 'lucide-react';
 import { QuestionCard } from '@/components/student/ui/QuestionCard';
 import { ProgressChart } from '@/components/student/ui/ProgressChart';
 import Link from 'next/link';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 export default function StudentDashboard() {
-    // Mock Data
-    const mockTopicsChartData = [
-        { name: 'Arrays & Strings', value: 45, color: '#10B981' }, // green-500
-        { name: 'Trees & Graphs', value: 25, color: '#F59E0B' },   // yellow-500
-        { name: 'Dynamic Prog.', value: 15, color: '#EF4444' },    // red-500
-        { name: 'Linked Lists', value: 15, color: '#3B82F6' },     // blue-500
-    ];
+    const { user } = useAuth();
+    const [progress, setProgress] = useState<any>(null);
+    const [problems, setProblems] = useState<any[]>([]);
 
-    const recommendedProblems = [
-        { id: 1, title: "Longest Increasing Subsequence", category: "Dynamic Programming", difficulty: "Medium" },
-        { id: 2, title: "Binary Tree Level Order Traversal", category: "Trees", difficulty: "Medium" },
-        { id: 3, title: "Merge k Sorted Lists", category: "Linked Lists", difficulty: "Hard" },
+    useEffect(() => {
+        api.getStudentProgress().then(setProgress).catch(console.error);
+        api.getProblems().then(data => setProblems(data.slice(0, 3))).catch(console.error);
+    }, []);
+
+    // Mock Data for charts
+    const mockTopicsChartData = [
+        { name: 'Arrays & Strings', value: 45, color: '#10B981' },
+        { name: 'Trees & Graphs', value: 25, color: '#F59E0B' },
+        { name: 'Dynamic Prog.', value: 15, color: '#EF4444' },
+        { name: 'Linked Lists', value: 15, color: '#3B82F6' },
     ];
 
     const recentActivity = [
@@ -36,7 +41,7 @@ export default function StudentDashboard() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
-                        <h1 className="text-3xl font-bold text-white tracking-tight">Welcome back, Student!</h1>
+                        <h1 className="text-3xl font-bold text-white tracking-tight">Welcome back, {user?.name || 'Student'}!</h1>
                         <span className="flex items-center gap-1 bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm font-bold border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
                             <Flame className="w-4 h-4" /> 12 Day Streak
                         </span>
@@ -52,10 +57,10 @@ export default function StudentDashboard() {
 
             {/* Metrics Overview */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Problems Solved" value="142" icon={CheckCircle2} trend={{ value: 12, isPositive: true }} subtitle="/ 500 Target" />
-                <StatCard title="Aptitude Accuracy" value="78%" icon={Target} trend={{ value: 4, isPositive: true }} subtitle="Last 30 days" />
-                <StatCard title="Company Readiness" value="65%" icon={Award} trend={{ value: 8, isPositive: true }} subtitle="Average across 10 companies" />
-                <StatCard title="Practice Time" value="48h" icon={Clock} subtitle="This month" />
+                <StatCard title="Problems Solved" value={progress?.problems_solved ?? '—'} icon={CheckCircle2} subtitle={`/ ${progress?.total_problems ?? '—'} Total`} />
+                <StatCard title="Aptitude Accuracy" value={`${progress?.aptitude_accuracy ?? '—'}%`} icon={Target} subtitle="Last 30 days" />
+                <StatCard title="Company Readiness" value={`${progress?.company_readiness ?? '—'}%`} icon={Award} subtitle="Average across companies" />
+                <StatCard title="Total Submissions" value={progress?.total_submissions ?? '—'} icon={Clock} subtitle="All time" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -72,11 +77,11 @@ export default function StudentDashboard() {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
-                            {recommendedProblems.map((prob) => (
+                            {problems.map((prob) => (
                                 <QuestionCard 
                                     key={prob.id}
                                     title={prob.title}
-                                    category={prob.category}
+                                    category={(prob.topics || []).join(', ') || 'General'}
                                     difficulty={prob.difficulty}
                                 />
                             ))}

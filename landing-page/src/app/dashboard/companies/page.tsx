@@ -1,76 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Building2, Flame, Award, Filter, Map } from 'lucide-react';
 import { CompanyCard } from '@/components/student/ui/CompanyCard';
-
-const mockCompanies = [
-    {
-        id: 'amazon',
-        name: 'Amazon',
-        logo: '/companies/amazon.png',
-        aptitudeProgress: 65,
-        codingProgress: 42,
-        totalTopics: 12,
-        activeStreak: 4,
-        isHot: true
-    },
-    {
-        id: 'google',
-        name: 'Google',
-        logo: '/companies/google.png',
-        aptitudeProgress: 20,
-        codingProgress: 88,
-        totalTopics: 15,
-        activeStreak: 0,
-        isHot: true
-    },
-    {
-        id: 'microsoft',
-        name: 'Microsoft',
-        logo: '/companies/microsoft.png',
-        aptitudeProgress: 90,
-        codingProgress: 75,
-        totalTopics: 10,
-        activeStreak: 12,
-        isHot: false
-    },
-    {
-        id: 'goldman',
-        name: 'Goldman Sachs',
-        logo: '/companies/goldman.png',
-        aptitudeProgress: 45,
-        codingProgress: 50,
-        totalTopics: 8,
-        activeStreak: 2,
-        isHot: false
-    },
-    {
-        id: 'meta',
-        name: 'Meta',
-        logo: '/companies/meta.png',
-        aptitudeProgress: 10,
-        codingProgress: 30,
-        totalTopics: 14,
-        activeStreak: 0,
-        isHot: true
-    },
-    {
-        id: 'apple',
-        name: 'Apple',
-        logo: '/companies/apple.png',
-        aptitudeProgress: 5,
-        codingProgress: 15,
-        totalTopics: 11,
-        activeStreak: 0,
-        isHot: false
-    }
-];
+import { api } from '@/lib/api';
 
 export default function CompaniesPage() {
     const [searchTerm, setSearchTerm] = useState('');
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const filteredCompanies = mockCompanies.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    useEffect(() => {
+        api.getCompanies()
+            .then(data => setCompanies(data))
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, []);
+
+    const filteredCompanies = companies.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 pb-8">
@@ -122,39 +69,26 @@ export default function CompaniesPage() {
                         className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 text-white placeholder:text-white/40 focus:outline-none focus:border-brand-500 focus:bg-white/[0.07] transition-all shadow-inner"
                     />
                 </div>
-                
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button className="flex-1 sm:flex-none h-12 px-6 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium transition-colors flex items-center justify-center gap-2">
-                        <Filter className="w-4 h-4" /> Filters
-                    </button>
-                    <select className="flex-1 sm:flex-none h-12 px-6 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium focus:outline-none appearance-none cursor-pointer">
-                        <option value="popular">Most Popular</option>
-                        <option value="progress">Highest Progress</option>
-                        <option value="recent">Recently Added</option>
-                    </select>
-                </div>
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCompanies.map(company => (
-                    <div key={company.id} className="relative group perspective">
-                        {/* Hot Badge */}
-                        {company.isHot && (
-                            <div className="absolute -top-3 -right-3 z-10 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-orange-400/50 flex items-center gap-1 animate-pulse">
-                                <Flame className="w-3 h-3" /> HOT
-                            </div>
-                        )}
-                        <CompanyCard 
-                            name={company.name}
-                            aptitudeScore={company.aptitudeProgress}
-                            codingScore={company.codingProgress}
-                            overallReadiness={Math.round((company.aptitudeProgress + company.codingProgress) / 2)}
-                            colorClasses={company.isHot ? 'from-orange-500 to-red-500' : 'from-brand-500 to-purple-500'}
-                        />
-                    </div>
-                ))}
-            </div>
+            {loading ? (
+                <div className="text-center py-20 text-white/50">Loading companies...</div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredCompanies.map(company => (
+                        <div key={company.id} className="relative group perspective">
+                            <CompanyCard 
+                                name={company.name}
+                                aptitudeScore={company.aptitude_question_count || 0}
+                                codingScore={company.coding_problem_count || 0}
+                                overallReadiness={Math.min(100, (company.aptitude_question_count || 0) + (company.coding_problem_count || 0))}
+                                colorClasses="from-brand-500 to-purple-500"
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {filteredCompanies.length === 0 && (
                 <div className="py-20 text-center">

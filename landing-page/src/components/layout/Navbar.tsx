@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 
 const navLinks = [
@@ -16,6 +16,17 @@ const navLinks = [
 export function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [hidden, setHidden] = useState(false);
+    const { scrollY } = useScroll();
+
+    useMotionValueEvent(scrollY, "change", (latest) => {
+        const previous = scrollY.getPrevious() ?? 0;
+        if (latest > previous && latest > 150) {
+            setHidden(true);
+        } else {
+            setHidden(false);
+        }
+    });
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -26,10 +37,14 @@ export function Navbar() {
     return (
         <>
             <motion.header
-                initial={{ y: -80, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled
+                variants={{
+                    visible: { y: 0, opacity: 1 },
+                    hidden: { y: -100, opacity: 0 }
+                }}
+                animate={hidden ? "hidden" : "visible"}
+                initial="visible"
+                transition={{ duration: 0.35, ease: "easeInOut" }}
+                className={`fixed top-0 w-full z-50 transition-colors duration-500 ${isScrolled
                     ? 'bg-[var(--color-background-primary)]/80 backdrop-blur-xl border-b border-white/10 py-3'
                     : 'bg-transparent py-5'
                     }`}

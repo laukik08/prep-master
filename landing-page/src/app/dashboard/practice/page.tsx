@@ -1,28 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, Filter, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
 import { Table, TableRow, TableCell } from '@/components/admin/ui/Table';
-
-const mockProblems = [
-    { id: '1', title: 'Two Sum', difficulty: 'Easy', topics: ['Array', 'Hash Table'], companyTags: ['Amazon', 'Google', 'Apple'], status: 'Solved' },
-    { id: '2', title: 'Add Two Numbers', difficulty: 'Medium', topics: ['Linked List', 'Math'], companyTags: ['Amazon', 'Microsoft', 'Bloomberg'], status: 'Unsolved' },
-    { id: '3', title: 'Longest Substring Without Repeating Characters', difficulty: 'Medium', topics: ['Hash Table', 'String', 'Sliding Window'], companyTags: ['Amazon', 'Bloomberg', 'Microsoft'], status: 'Unsolved' },
-    { id: '4', title: 'Median of Two Sorted Arrays', difficulty: 'Hard', topics: ['Array', 'Binary Search', 'Divide and Conquer'], companyTags: ['Amazon', 'Google', 'Microsoft'], status: 'Unsolved' },
-    { id: '5', title: 'Longest Palindromic Substring', difficulty: 'Medium', topics: ['String', 'Dynamic Programming'], companyTags: ['Amazon', 'Microsoft'], status: 'Solved' },
-    { id: '20', title: 'Valid Parentheses', difficulty: 'Easy', topics: ['String', 'Stack'], companyTags: ['Amazon', 'Facebook', 'Microsoft'], status: 'Solved' },
-    { id: '21', title: 'Merge Two Sorted Lists', difficulty: 'Easy', topics: ['Linked List', 'Recursion'], companyTags: ['Amazon', 'Microsoft'], status: 'Unsolved' },
-    { id: '42', title: 'Trapping Rain Water', difficulty: 'Hard', topics: ['Array', 'Two Pointers', 'Dynamic Programming', 'Stack'], companyTags: ['Amazon', 'Google', 'Goldman Sachs'], status: 'Unsolved' },
-];
+import { api } from '@/lib/api';
 
 export default function PracticePage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [difficultyFilter, setDifficultyFilter] = useState('All');
+    const [problems, setProblems] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const filteredProblems = mockProblems.filter(p => {
+    useEffect(() => {
+        api.getProblems()
+            .then(data => setProblems(data))
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, []);
+
+    const filteredProblems = problems.filter(p => {
         const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              p.topics.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
+                              (p.topics || []).some((t: string) => t.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchesDifficulty = difficultyFilter === 'All' || p.difficulty === difficultyFilter;
         return matchesSearch && matchesDifficulty;
     });
@@ -79,29 +78,32 @@ export default function PracticePage() {
             </div>
 
             {/* Problems Table */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-xl">
-                <Table
-                    headers={[
-                        <span key="status">Status</span>,
-                        <span key="title">Title</span>,
-                        <span key="difficulty" className="text-center block">Difficulty</span>,
-                        <span key="topics" className="hidden md:inline">Topics</span>,
-                        <span key="companies" className="hidden lg:inline">Companies</span>,
-                        <span key="action"></span>
-                    ]}
-                >
-                    {filteredProblems.map((problem) => (
-                        <TableRow key={problem.id}>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                {problem.status === 'Solved' ? (
-                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+            {loading ? (
+                <div className="text-center py-20 text-white/50">Loading problems...</div>
+            ) : (
+                <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+                    <Table
+                        headers={[
+                            <span key="status">Status</span>,
+                            <span key="title">Title</span>,
+                            <span key="difficulty" className="text-center block">Difficulty</span>,
+                            <span key="topics" className="hidden md:inline">Topics</span>,
+                            <span key="companies" className="hidden lg:inline">Companies</span>,
+                            <span key="action"></span>
+                        ]}
+                    >
+                        {filteredProblems.map((problem) => (
+                            <TableRow key={problem.id}>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {problem.status === 'Solved' ? (
+                                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                                     ) : (
                                         <Circle className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
                                     )}
-                            </td>
+                                </td>
                                 <TableCell>
                                     <Link href={`/dashboard/practice/${problem.id}`} className="font-semibold text-white/90 group-hover:text-brand-300 transition-colors">
-                                        {problem.id}. {problem.title}
+                                        {problem.title}
                                     </Link>
                                 </TableCell>
                                 <TableCell className="text-center">
@@ -111,12 +113,12 @@ export default function PracticePage() {
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell">
                                     <div className="flex flex-wrap gap-1.5">
-                                        {problem.topics.slice(0, 3).map((topic, i) => (
+                                        {(problem.topics || []).slice(0, 3).map((topic: string, i: number) => (
                                             <span key={i} className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-xs text-white/60">
                                                 {topic}
                                             </span>
                                         ))}
-                                        {problem.topics.length > 3 && (
+                                        {(problem.topics || []).length > 3 && (
                                             <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-xs text-white/40">
                                                 +{problem.topics.length - 3}
                                             </span>
@@ -125,16 +127,11 @@ export default function PracticePage() {
                                 </TableCell>
                                 <TableCell className="hidden lg:table-cell">
                                     <div className="flex flex-wrap gap-1.5">
-                                        {problem.companyTags.slice(0, 2).map((tag, i) => (
+                                        {(problem.companies || []).slice(0, 2).map((tag: string, i: number) => (
                                             <span key={i} className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-xs text-white/60">
                                                 {tag}
                                             </span>
                                         ))}
-                                        {problem.companyTags.length > 2 && (
-                                            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-xs text-white/40">
-                                                +{problem.companyTags.length - 2}
-                                            </span>
-                                        )}
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -146,23 +143,20 @@ export default function PracticePage() {
                                 </TableCell>
                             </TableRow>
                         ))}
-                    {filteredProblems.length === 0 && (
-                        <TableRow>
-                            <td className="px-6 py-4 whitespace-nowrap h-32 text-center text-white/40" colSpan={6}>
-                                No problems found matching your criteria.
-                            </td>
-                        </TableRow>
-                    )}
-                </Table>
+                        {filteredProblems.length === 0 && (
+                            <TableRow>
+                                <td className="px-6 py-4 whitespace-nowrap h-32 text-center text-white/40" colSpan={6}>
+                                    No problems found matching your criteria.
+                                </td>
+                            </TableRow>
+                        )}
+                    </Table>
 
-                <div className="p-4 border-t border-white/5 text-center sm:text-left flex justify-between items-center bg-[#0a0618]/50">
-                    <span className="text-sm text-white/50">Showing {filteredProblems.length} problems</span>
-                    <div className="flex gap-2">
-                        <button className="px-3 py-1 rounded-md bg-white/5 border border-white/10 text-xs hover:bg-white/10 text-white/70 transition-colors pointer-events-none opacity-50">Previous</button>
-                        <button className="px-3 py-1 rounded-md bg-brand-500 text-xs hover:bg-brand-400 text-white transition-colors">Next</button>
+                    <div className="p-4 border-t border-white/5 text-center sm:text-left flex justify-between items-center bg-[#0a0618]/50">
+                        <span className="text-sm text-white/50">Showing {filteredProblems.length} problems</span>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

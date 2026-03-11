@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AdminNavbar } from '@/components/admin/layout/AdminNavbar';
 import { Sidebar } from '@/components/admin/layout/Sidebar';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AdminLayout({
     children,
@@ -11,6 +13,14 @@ export default function AdminLayout({
 }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isDesktopMenuExpanded, setIsDesktopMenuExpanded] = useState(true);
+    const { user, isLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!isLoading && (!user || user.role !== 'admin')) {
+            router.push('/dashboard');
+        }
+    }, [user, isLoading, router]);
 
     const handleMenuClick = () => {
         if (window.innerWidth < 768) { // md breakpoint
@@ -19,6 +29,10 @@ export default function AdminLayout({
             setIsDesktopMenuExpanded(!isDesktopMenuExpanded);
         }
     };
+
+    if (isLoading || !user || user.role !== 'admin') {
+        return <div className="h-screen flex items-center justify-center bg-[#0a0618] text-white">Loading...</div>;
+    }
 
     return (
         <div className="h-screen overflow-hidden bg-[var(--color-background-primary)] text-white flex flex-col">
