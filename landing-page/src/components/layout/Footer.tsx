@@ -22,10 +22,10 @@ export function Footer() {
                 <motion.div variants={columnVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                     <motion.div variants={itemVariants} className="col-span-1 md:col-span-1">
                         <Link href="/" className="flex items-center gap-2 mb-4 group">
-                            <motion.div whileHover={{ rotate: 10, scale: 1.1 }} className="w-6 h-6 rounded-md bg-white flex items-center justify-center text-[var(--color-background-primary)] font-bold text-sm">C</motion.div>
-                            <span className="font-bold text-lg group-hover:text-brand-300 transition-colors">CREATFLYCODE</span>
+                            <motion.div whileHover={{ rotate: 10, scale: 1.1 }} className="w-6 h-6 rounded-md bg-white flex items-center justify-center text-[var(--color-background-primary)] font-bold text-sm">P</motion.div>
+                            <span className="font-bold text-lg group-hover:text-brand-300 transition-colors">PREPMASTER</span>
                         </Link>
-                        <p className="text-white/50 text-sm leading-relaxed mb-6">A native development environment for front-end designers and developers.</p>
+                        <p className="text-white/50 text-sm leading-relaxed mb-6">A modern platform designed to help students prepare for campus placements with coding practice, aptitude tests, and analytics.</p>
                         <div className="flex items-center gap-4">
                             {['in', 'tw', 'ig'].map((icon) => (
                                 <motion.div key={icon} whileHover={{ scale: 1.15, y: -3, borderColor: 'rgba(139,92,246,0.5)' }} whileTap={{ scale: 0.9 }} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer border border-white/10">{icon}</motion.div>
@@ -33,9 +33,9 @@ export function Footer() {
                         </div>
                     </motion.div>
                     {[
-                        { title: 'About us', links: ['About', 'Careers', 'Blog', 'Legal'] },
-                        { title: 'Services', links: ['Browser extension', 'Themes', 'UI assistant', 'Screen shield'] },
-                        { title: 'Use cases', links: ['Designing', 'Guest posts', 'Sales demos', 'Market levels'] },
+                        { title: 'Product', links: ['About', 'Features', 'Companies', 'Practice'] },
+                        { title: 'Resources', links: ['Dashboard', 'Login', 'Blog', 'Help Center'] },
+                        { title: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Contact Us', 'Careers'] },
                     ].map((col) => (
                         <motion.div key={col.title} variants={itemVariants}>
                             <h4 className="font-semibold text-white mb-6">{col.title}</h4>
@@ -50,7 +50,7 @@ export function Footer() {
                     ))}
                 </motion.div>
                 <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.3 }} className="pt-8 border-t border-white/10 text-center">
-                    <p className="text-white/30 text-xs">© 2024 Creatfly.xyz, Inc. All rights reserved.</p>
+                    <p className="text-white/30 text-xs">© 2026 PrepMaster. All rights reserved.</p>
                 </motion.div>
             </div>
         </footer>

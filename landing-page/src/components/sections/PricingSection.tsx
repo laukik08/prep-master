@@ -18,29 +18,32 @@ export function PricingSection() {
     const plans = [
         {
             name: 'Basic',
-            price: '$10',
-            period: 'per month',
-            description: 'Basic features for up to 10 users',
+            price: 'Free',
+            period: '',
+            description: 'Get started with basic placement preparation',
             buttonVariant: 'secondary' as const,
-            features: ['Access to basic features', 'Basic reporting and analytics', 'Up to 10 individual users', '20GB individual data each user', 'Basic chat and email support'],
+            buttonText: 'Start Learning',
+            features: ['Access to aptitude practice', 'Limited coding problems', 'Basic progress tracking'],
             isPopular: false,
         },
         {
-            name: 'Business plan',
-            price: '$20',
-            period: 'per month',
-            description: 'Growing teams up to 20 users',
+            name: 'Pro Plan',
+            price: '₹199',
+            period: '/ month',
+            description: 'Full access for serious preparation',
             buttonVariant: 'primary' as const,
-            features: ['Everything in Basic, plus...', 'Access to basic features', 'Basic reporting and analytics', 'Up to 20 individual users', '20GB individual data each user', 'Basic chat and email support'],
+            buttonText: 'Upgrade Now',
+            features: ['Full coding problem library', 'Company-wise preparation', 'Mock placement tests', 'Detailed analytics'],
             isPopular: true,
         },
         {
-            name: 'Enterprise Plan',
-            price: '$40',
-            period: 'per month',
-            description: 'Basic features for up to 10 users',
+            name: 'Premium Plan',
+            price: '₹399',
+            period: '/ month',
+            description: 'Complete placement readiness package',
             buttonVariant: 'secondary' as const,
-            features: ['Everything in Business plan, plus...', 'Access to basic features', 'Basic reporting and analytics', 'Up to 50 individual users', '20GB individual data each user', 'Basic chat and email support'],
+            buttonText: 'Get Premium',
+            features: ['All coding problems', 'All aptitude modules', 'Company readiness analytics', 'Priority support'],
             isPopular: false,
         },
     ];
@@ -53,8 +56,8 @@ export function PricingSection() {
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6">
                         <span className="text-sm font-medium text-white/80">★ Pricing</span>
                     </motion.div>
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">A Plan for Every Need</h2>
-                    <p className="text-white/60 text-lg max-w-2xl mx-auto">Creatfly unites marketers, designers, and developers to create, manage, and optimize impactful web experiences.</p>
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Plans for Every Student</h2>
+                    <p className="text-white/60 text-lg max-w-2xl mx-auto">Choose a plan and start preparing for placements with structured practice.</p>
                 </motion.div>
                 <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
                     {plans.map((plan) => (
@@ -75,11 +78,11 @@ export function PricingSection() {
                             <div className="mb-8">
                                 <div className="flex items-end gap-1">
                                     <motion.span initial={{ opacity: 0, scale: 0.5 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, type: 'spring', stiffness: 200 }} className="text-4xl font-bold">{plan.price}</motion.span>
-                                    <span className="text-white/50 text-sm mb-1">{plan.period}</span>
+                                    {plan.period && <span className="text-white/50 text-sm mb-1">{plan.period}</span>}
                                 </div>
                             </div>
                             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                                <Button variant={plan.buttonVariant} className="w-full mb-8 py-3">Get started</Button>
+                                <Button variant={plan.buttonVariant} className="w-full mb-8 py-3">{plan.buttonText}</Button>
                             </motion.div>
                             <div className="mt-auto">
                                 <p className="text-white text-xs font-semibold mb-4 uppercase tracking-wider">Included Features</p>

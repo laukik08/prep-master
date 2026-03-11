@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 
 const cards = [
-    { title: 'Review Diffs', desc: 'Instantly view and approve code changes as they happen, keeping your workflow seamless.' },
-    { title: 'Remain In Flow While Coding', desc: 'By removing the hurdles that block productivity when building software.' },
-    { title: 'Mix Coding', desc: 'Combine visual editing and code together in a single, powerful workspace.' },
+    { title: 'Aptitude Practice', desc: 'Practice quantitative, logical reasoning, and verbal aptitude questions with timed tests and instant evaluation.' },
+    { title: 'DSA Coding Practice', desc: 'Solve coding problems in a LeetCode-style editor with support for C++, Java, and Python.' },
+    { title: 'Company-wise Preparation', desc: 'Target your preparation for TCS, Infosys, Wipro, and more with company-specific question sets.' },
 ];
 
 const AUTO_PLAY_INTERVAL = 3500;
@@ -41,11 +41,11 @@ export function FeaturesSection() {
                     className="text-center max-w-3xl mx-auto mb-20"
                 >
                     <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 mt-4">
-                        All Of Your Deployments<br className="hidden sm:block" />
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-300 via-white to-brand-400 pl-2">In One Place</span>
+                        All Your Placement Preparation<br className="hidden sm:block" />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-300 via-white to-brand-400 pl-2">In One Platform</span>
                     </h2>
                     <p className="text-white/60 text-lg">
-                        Your ND Dev® account grows with you through our innovative NDXMiles loyalty program
+                        PrepMaster helps students practice aptitude, solve coding challenges, and track their placement readiness.
                     </p>
                 </motion.div>
                 <div className="relative max-w-4xl mx-auto" onMouseEnter={() => { pausedRef.current = true; }} onMouseLeave={() => { pausedRef.current = false; }}>
@@ -63,7 +63,7 @@ export function FeaturesSection() {
                             <h3 className="text-2xl md:text-3xl font-bold mb-4">{cards[activeIndex].title}</h3>
                             <p className="text-white/50 mb-10 max-w-lg mx-auto leading-relaxed">{cards[activeIndex].desc}</p>
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-                                <Button variant="primary" className="h-12 px-8">Get Started</Button>
+                                <Button variant="primary" className="h-12 px-8">Start Practicing</Button>
                             </motion.div>
                         </motion.div>
                     </AnimatePresence>

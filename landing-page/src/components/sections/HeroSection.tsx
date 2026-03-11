@@ -21,10 +21,10 @@ const codeLines = [
     null,
     { indent: 1, tokens: [{ text: 'return ', cls: 'text-pink-400' }, { text: '(', cls: 'text-brand-300' }] },
     { indent: 2, tokens: [{ text: '<div className="', cls: 'text-white' }, { text: 'app-container min-h-screen', cls: 'text-green-300' }, { text: '">', cls: 'text-white' }] },
-    { indent: 3, tokens: [{ text: '<h1>', cls: 'text-white' }, { text: 'Welcome to Creatfly', cls: 'text-white' }, { text: '</h1>', cls: 'text-white' }] },
-    { indent: 3, tokens: [{ text: '<p>', cls: 'text-white' }, { text: 'Build faster, look better.', cls: 'text-white' }, { text: '</p>', cls: 'text-white' }] },
+    { indent: 3, tokens: [{ text: '<h1>', cls: 'text-white' }, { text: 'Welcome to PrepMaster', cls: 'text-white' }, { text: '</h1>', cls: 'text-white' }] },
+    { indent: 3, tokens: [{ text: '<p>', cls: 'text-white' }, { text: 'Practice smarter, get placed faster.', cls: 'text-white' }, { text: '</p>', cls: 'text-white' }] },
     { indent: 3, tokens: [{ text: '<button onClick={', cls: 'text-white' }, { text: '() => ', cls: 'text-pink-400' }, { text: 'setCount(count + 1)', cls: 'text-brand-300' }, { text: '}>', cls: 'text-white' }] },
-    { indent: 4, tokens: [{ text: 'Deployed {count} times', cls: 'text-white' }] },
+    { indent: 4, tokens: [{ text: 'Solved {count} problems', cls: 'text-white' }] },
     { indent: 3, tokens: [{ text: '</button>', cls: 'text-white' }] },
     { indent: 2, tokens: [{ text: '</div>', cls: 'text-white' }] },
     { indent: 1, tokens: [{ text: ');', cls: 'text-brand-300' }] },
@@ -60,7 +60,7 @@ export function HeroSection() {
                     className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-8 backdrop-blur-sm"
                 >
                     <span className="w-2 h-2 rounded-full bg-brand-400 animate-[pulse_2s_ease-in-out_infinite]" />
-                    <span className="text-sm font-medium text-white/80">Creatfly is a website builder</span>
+                    <span className="text-sm font-medium text-white/80">PrepMaster – Placement Preparation Platform</span>
                 </motion.div>
 
                 <motion.h1
@@ -68,14 +68,14 @@ export function HeroSection() {
                     variants={fadeUp}
                     className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight"
                 >
-                    Your site should do more<br className="hidden md:block" />
+                    Prepare for Placements<br className="hidden md:block" />
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-300 via-white to-brand-400">
-                        than look good
+                        Smarter
                     </span>
                 </motion.h1>
 
                 <motion.p custom={2} variants={fadeUp} className="text-lg md:text-xl text-white/60 mb-10 max-w-2xl mx-auto">
-                    Creatfly unites marketers, designers, and developers to create, manage, and optimize impactful web experiences.
+                    Practice aptitude questions, solve DSA coding problems, and prepare company-wise for campus placements — all in one platform.
                 </motion.p>
 
                 <motion.div custom={3} variants={fadeUp} className="flex flex-col sm:flex-row items-center gap-4">
@@ -83,12 +83,12 @@ export function HeroSection() {
                         <Button variant="primary" className="h-12 px-8 text-base">Get Started</Button>
                     </motion.div>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-                        <Button variant="secondary" className="h-12 px-8 text-base">Learn More</Button>
+                        <Button variant="secondary" className="h-12 px-8 text-base">Explore Features</Button>
                     </motion.div>
                 </motion.div>
             </motion.div>
 
-            {/* Editor Mockup */}
+            {/* Editor Mockup — Interactive Coding Environment */}
             <motion.div
                 initial={{ opacity: 0, y: 60, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -96,6 +96,7 @@ export function HeroSection() {
                 style={{ scale: editorScale }}
                 className="w-full max-w-5xl mx-auto mt-20 relative z-10"
             >
+                <p className="text-white/40 text-sm font-medium text-center mb-4">Interactive Coding Environment</p>
                 <div className="relative rounded-2xl bg-[#0a0618] border border-white/10 shadow-[0_0_80px_rgba(124,58,237,0.25)] overflow-hidden hover:shadow-[0_0_120px_rgba(124,58,237,0.35)] transition-shadow duration-700">
                     <div className="h-12 border-b border-white/10 flex items-center px-4 gap-2 bg-white/5">
                         <div className="flex gap-2">
@@ -105,8 +106,8 @@ export function HeroSection() {
                         </div>
                         <div className="flex-1 flex justify-center">
                             <div className="flex space-x-1">
-                                <div className="px-4 py-1 text-xs text-white/80 bg-white/10 rounded-t-lg">app.js</div>
-                                <div className="px-4 py-1 text-xs text-white/40 hover:text-white/80 transition-colors cursor-pointer">index.html</div>
+                                <div className="px-4 py-1 text-xs text-white/80 bg-white/10 rounded-t-lg">solution.js</div>
+                                <div className="px-4 py-1 text-xs text-white/40 hover:text-white/80 transition-colors cursor-pointer">test.js</div>
                                 <div className="px-4 py-1 text-xs text-white/40 hover:text-white/80 transition-colors cursor-pointer">style.css</div>
                             </div>
                         </div>
@@ -116,12 +117,12 @@ export function HeroSection() {
                             <div className="text-xs font-mono text-brand-400 mb-2">EXPLORER</div>
                             <div className="text-sm text-white/70 space-y-2 font-mono">
                                 <div className="flex items-center gap-2"><span className="text-blue-400">▾</span> src</div>
-                                <div className="pl-4 flex items-center gap-2"><span className="text-yellow-400">⚡</span> components</div>
-                                <div className="pl-4 flex items-center gap-2 text-white bg-white/5 rounded px-1"><span className="text-blue-500">📄</span> app.js</div>
-                                <div className="pl-4 flex items-center gap-2"><span className="text-orange-400">📄</span> index.html</div>
+                                <div className="pl-4 flex items-center gap-2"><span className="text-yellow-400">⚡</span> problems</div>
+                                <div className="pl-4 flex items-center gap-2 text-white bg-white/5 rounded px-1"><span className="text-blue-500">📄</span> solution.js</div>
+                                <div className="pl-4 flex items-center gap-2"><span className="text-orange-400">📄</span> test.js</div>
                                 <div className="pl-4 flex items-center gap-2"><span className="text-cyan-400">#️⃣</span> style.css</div>
-                                <div className="flex items-center gap-2 mt-4"><span className="text-gray-400">▸</span> public</div>
-                                <div className="flex items-center gap-2"><span className="text-gray-400">▸</span> node_modules</div>
+                                <div className="flex items-center gap-2 mt-4"><span className="text-gray-400">▸</span> tests</div>
+                                <div className="flex items-center gap-2"><span className="text-gray-400">▸</span> utils</div>
                             </div>
                         </div>
                         <div className="flex-1 p-6 font-mono text-sm leading-relaxed overflow-x-auto">

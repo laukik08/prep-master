@@ -5,18 +5,18 @@ import { motion } from 'framer-motion';
 
 export function TrustedBySection() {
     const logos = [
-        { name: 'slack', text: 'slack' },
-        { name: 'coinbase', text: 'coinbase' },
-        { name: 'webflow', text: 'webflow' },
-        { name: 'dropbox', text: 'Dropbox' },
-        { name: '500apps', text: '500APPS' },
-        { name: 'zoom', text: 'zoom' },
-        { name: 'shopify', text: 'Shopify' },
-        { name: 'atlassian', text: 'Atlassian' },
+        { name: 'tcs', text: 'TCS' },
+        { name: 'infosys', text: 'Infosys' },
+        { name: 'capgemini', text: 'Capgemini' },
+        { name: 'wipro', text: 'Wipro' },
+        { name: 'accenture', text: 'Accenture' },
+        { name: 'tcs', text: 'TCS' },
+        { name: 'infosys', text: 'Infosys' },
+        { name: 'capgemini', text: 'Capgemini' },
     ];
 
     return (
-        <section className="py-16 border-y border-white/5 bg-white/[0.02] overflow-hidden">
+        <section id="companies" className="py-16 border-y border-white/5 bg-white/[0.02] overflow-hidden">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -25,7 +25,7 @@ export function TrustedBySection() {
                 className="container mx-auto px-6 text-center"
             >
                 <p className="text-white/40 text-sm font-medium mb-10">
-                    Trusted by businesses of all sizes worldwide.
+                    Trusted by students preparing for campus placements
                 </p>
             </motion.div>
             <div className="relative w-full overflow-hidden">
