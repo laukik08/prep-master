@@ -234,20 +234,25 @@ export default function CodingProblemsManagement() {
                 }
             >
                 <div className="space-y-4">
-                    <p className="text-sm text-white/50">Paste a JSON array of problems. Each object should have: <code className="text-brand-400">title</code>, <code className="text-brand-400">description</code>, <code className="text-brand-400">difficulty</code>, <code className="text-brand-400">topics</code>, and optionally <code className="text-brand-400">test_cases</code>.</p>
-                    <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-white/60 font-mono overflow-x-auto">
+                    <p className="text-sm text-white/50">Paste a JSON array of problems. Support for <code className="text-brand-400">starter_code</code> and hidden <code className="text-brand-400">driver_code</code> for LeetCode-style evaluation.</p>
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-white/60 font-mono overflow-x-auto max-h-64 nice-scrollbar">
 {`[
   {
     "title": "Two Sum",
-    "description": "Given an array...",
+    "description": "Given an array of integers...",
     "difficulty": "Easy",
-    "topics": ["Arrays", "Hash Table"],
-    "example_input": "nums = [2,7,11,15], target = 9",
+    "topics": ["Array", "Hash Table"],
+    "example_input": "[2,7,11,15]\\n9",
     "example_output": "[0,1]",
-    "constraints": "2 <= nums.length <= 10^4",
     "test_cases": [
-      { "input": "2 7 11 15\\n9", "expected_output": "0 1" }
-    ]
+      { "input": "[2,7,11,15]\\n9", "expected_output": "[0,1]" }
+    ],
+    "starter_code": {
+      "javascript": "/**\\n * @param {number[]} nums\\n * @param {number} target\\n * @return {number[]}\\n */\\nvar twoSum = function(nums, target) {\\n    \\n};"
+    },
+    "driver_code": {
+      "javascript": "\\nconst fs = require('fs');\\nconst input = fs.readFileSync(0, 'utf-8').trim().split('\\\\n');\\nif (input.length >= 2) {\\n    const nums = JSON.parse(input[0]);\\n    const target = JSON.parse(input[1]);\\n    console.log(JSON.stringify(twoSum(nums, target)));\\n}\\n"
+    }
   }
 ]`}
                     </div>

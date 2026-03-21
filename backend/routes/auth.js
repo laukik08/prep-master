@@ -37,4 +37,12 @@ const passwordValidation = [
 
 router.put('/password', authMiddleware, passwordValidation, validate, authController.changePassword);
 
+// ─── OAuth Routes ─────────────────────────────────────
+const oauthController = require('../controllers/oauthController');
+
+router.get('/oauth/google', oauthController.googleRedirect);
+router.get('/oauth/google/callback', oauthController.googleCallback);
+router.get('/oauth/github', oauthController.githubRedirect);
+router.get('/oauth/github/callback', oauthController.githubCallback);
+
 module.exports = router;

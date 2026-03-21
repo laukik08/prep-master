@@ -57,11 +57,11 @@ exports.getById = async (req, res, next) => {
 // POST /api/problems (Admin)
 exports.create = async (req, res, next) => {
   try {
-    const { title, description, difficulty, topics, companies, constraints, example_input, example_output } = req.body;
+    const { title, description, difficulty, topics, companies, constraints, example_input, example_output, test_cases, starter_code, driver_code } = req.body;
 
     const { data, error } = await supabase
       .from('problems')
-      .insert({ title, description, difficulty, topics, companies, constraints, example_input, example_output })
+      .insert({ title, description, difficulty, topics, companies, constraints, example_input, example_output, test_cases, starter_code, driver_code })
       .select()
       .single();
 
@@ -75,11 +75,11 @@ exports.create = async (req, res, next) => {
 // PUT /api/problems/:id (Admin)
 exports.update = async (req, res, next) => {
   try {
-    const { title, description, difficulty, topics, companies, constraints, example_input, example_output } = req.body;
+    const { title, description, difficulty, topics, companies, constraints, example_input, example_output, test_cases, starter_code, driver_code } = req.body;
 
     const { data, error } = await supabase
       .from('problems')
-      .update({ title, description, difficulty, topics, companies, constraints, example_input, example_output })
+      .update({ title, description, difficulty, topics, companies, constraints, example_input, example_output, test_cases, starter_code, driver_code })
       .eq('id', req.params.id)
       .select()
       .single();

@@ -106,6 +106,7 @@ export default function AptitudePracticePage() {
 
             if (submissions.length > 0) {
                 await api.submitAptitude(submissions);
+                window.dispatchEvent(new CustomEvent('xp-updated'));
             }
         } catch (error) {
             console.error('Failed to submit aptitude test:', error);

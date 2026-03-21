@@ -39,7 +39,12 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
 
     useEffect(() => {
         api.getProblem(id)
-            .then(data => setProblem(data))
+            .then(data => {
+                setProblem(data);
+                if (data?.starter_code?.[language]) {
+                    setCode(data.starter_code[language]);
+                }
+            })
             .catch(err => {
                 console.error('Failed to load problem:', err);
                 router.push('/dashboard/practice');
@@ -49,20 +54,26 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
     const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newLang = e.target.value;
         setLanguage(newLang);
-        setCode(initialCodeSnippets[newLang]);
+        if (problem?.starter_code?.[newLang]) {
+            setCode(problem.starter_code[newLang]);
+        } else {
+            setCode(initialCodeSnippets[newLang]);
+        }
     };
 
     const handleRunCode = async () => {
         setIsRunning(true);
         setConsoleOutput(null);
+        setActiveTestCase(0);
         try {
-            const result = await api.runCode({ language, code });
+            const result = await api.runCode({ language, code, problem_id: id as string });
             setConsoleOutput({ 
-                mode: 'run',
-                status: result.status === 'Success' ? 'Execution Successful' : 'Runtime Error',
-                stdout: result.stdout || '',
-                stderr: result.stderr || '',
-                time: result.executionTime
+                mode: 'submit', // Reuse the submit mode UI to show test case pills
+                verdict: result.verdict,
+                total_tests: result.total_tests,
+                tests_passed: result.tests_passed,
+                total_time: result.total_time,
+                test_results: result.test_results
             });
         } catch (error: any) {
             setConsoleOutput({ mode: 'run', status: 'Execution Failed', stderr: error?.error || 'Connection error.', time: '-' });
@@ -70,6 +81,7 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
             setIsRunning(false);
         }
     };
+
 
     const handleSubmitCode = async () => {
         setIsRunning(true);
@@ -85,6 +97,10 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
                 total_time: result.total_time,
                 test_results: result.test_results
             });
+            
+            if (result.verdict === 'Accepted') {
+                window.dispatchEvent(new CustomEvent('xp-updated'));
+            }
         } catch (error: any) {
             setConsoleOutput({ mode: 'run', status: 'Submission Failed', stderr: error?.error || 'Connection error.', time: '-' });
         } finally {
@@ -185,7 +201,7 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
                         </select>
                         <div className="flex items-center gap-4 text-white/50">
                             <button className="hover:text-white transition-colors" title="Settings"><Settings className="w-4 h-4" /></button>
-                            <button className="hover:text-white transition-colors" onClick={() => setCode(initialCodeSnippets[language])} title="Reset"><RefreshCw className="w-4 h-4" /></button>
+                            <button className="hover:text-white transition-colors" onClick={() => setCode(problem?.starter_code?.[language] || initialCodeSnippets[language])} title="Reset"><RefreshCw className="w-4 h-4" /></button>
                         </div>
                     </div>
                     
@@ -199,13 +215,15 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
                 </div>
 
                 {/* Console / Verdict Section */}
-                <div className="h-72 shrink-0 bg-[#0a0618] border border-white/10 rounded-xl overflow-hidden shadow-2xl flex flex-col relative group">
-                    <div className="h-10 border-b border-white/10 bg-white/[0.02] flex items-center justify-between px-4">
+                <div className="h-80 shrink-0 bg-[#0a0618] border border-white/10 rounded-xl overflow-hidden shadow-2xl flex flex-col">
+                    <div className="h-10 border-b border-white/10 bg-white/[0.02] flex items-center justify-between px-4 shrink-0">
                         <span className="text-sm font-semibold text-white/80">Console</span>
-                        {consoleOutput?.time && <span className="text-xs text-white/40 font-mono">Runtime: {consoleOutput.time}</span>}
-                        {consoleOutput?.total_time && <span className="text-xs text-white/40 font-mono">Total: {consoleOutput.total_time}</span>}
+                        <div className="flex gap-4">
+                            {consoleOutput?.time && <span className="text-xs text-white/40 font-mono">Runtime: {consoleOutput.time}</span>}
+                            {consoleOutput?.total_time && <span className="text-xs text-white/40 font-mono">Total: {consoleOutput.total_time}</span>}
+                        </div>
                     </div>
-                    <div className="flex-1 p-4 overflow-y-auto nice-scrollbar">
+                    <div className="flex-1 p-4 overflow-y-auto nice-scrollbar relative">
                         {!consoleOutput && !isRunning && (
                             <div className="h-full flex flex-col items-center justify-center text-white/30 text-sm">
                                 <Clock className="w-6 h-6 mb-2 opacity-50" />
@@ -303,19 +321,19 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
                         )}
                     </div>
                     
-                    {/* Action Bar */}
-                    <div className="absolute top-1 right-2 flex justify-end gap-3 z-10 p-4">
+                    {/* Action Bar / Console Footer */}
+                    <div className="h-16 border-t border-white/10 bg-[#0a0618] flex items-center justify-end px-4 gap-3 shrink-0">
                         <button 
                             onClick={handleRunCode}
                             disabled={isRunning}
-                            className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed border border-white/5"
+                            className="bg-white/5 hover:bg-white/10 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
                         >
                             <Play className="w-4 h-4" /> Run
                         </button>
                         <button 
                             onClick={handleSubmitCode}
                             disabled={isRunning}
-                            className="bg-brand-500 hover:bg-brand-400 text-white px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm shadow-[0_0_20px_rgba(124,58,237,0.3)] disabled:opacity-50 disabled:cursor-not-allowed border border-brand-500/50"
+                            className="bg-brand-500 hover:bg-brand-400 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm shadow-[0_0_15px_rgba(124,58,237,0.3)] disabled:opacity-50 disabled:cursor-not-allowed border border-brand-500/50"
                         >
                             <Send className="w-4 h-4" /> Submit
                         </button>

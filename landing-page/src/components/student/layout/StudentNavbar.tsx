@@ -11,7 +11,7 @@ export function StudentNavbar({ onMenuClick }: { onMenuClick?: () => void }) {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [progress, setProgress] = useState<{ xp: number; level: number }>({ xp: 0, level: 1 });
 
-    useEffect(() => {
+    const fetchProgress = () => {
         if (user) {
             api.getStudentProgress().then(data => {
                 if (data && data.xp !== undefined) {
@@ -19,6 +19,16 @@ export function StudentNavbar({ onMenuClick }: { onMenuClick?: () => void }) {
                 }
             }).catch(console.error);
         }
+    };
+
+    useEffect(() => {
+        fetchProgress();
+        
+        // Listen for global custom event to trigger XP refresh
+        const handleXpUpdate = () => fetchProgress();
+        window.addEventListener('xp-updated', handleXpUpdate);
+        
+        return () => window.removeEventListener('xp-updated', handleXpUpdate);
     }, [user]);
     return (
         <nav className="h-16 border-b border-white/10 bg-[#0a0618] flex items-center justify-between px-4 sm:px-6 sticky top-0 z-50">

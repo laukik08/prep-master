@@ -123,8 +123,23 @@ class ApiClient {
   }
 
   // ─── Code Execution ────────────────────────────────────
-  async runCode(data: { language: string; code: string; input?: string }) {
-    return this.request<{ stdout: string; stderr: string; status: string; executionTime: string }>('/code/run', {
+  async runCode(data: { language: string; code: string; problem_id: string; input?: string }) {
+    return this.request<{
+      verdict: string;
+      total_tests: number;
+      tests_passed: number;
+      total_time: string;
+      test_results: Array<{
+        test_case: number;
+        passed: boolean;
+        input: string;
+        expected_output: string;
+        actual_output: string;
+        stderr: string;
+        execution_time: string;
+        status: string;
+      }>;
+    }>('/code/run', {
       method: 'POST', headers: this.headers(), body: JSON.stringify(data),
     });
   }

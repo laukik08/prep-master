@@ -70,31 +70,113 @@ function createTempFile(language, code) {
   }
 }
 
-// ─── POST /api/code/run  (Run Only — no verdict) ────────────
+// ─── POST /api/code/run  (Run against public test cases only) ────────────
 exports.run = async (req, res, next) => {
   try {
-    const { language, code, input } = req.body;
+    const { language, code, problem_id, input } = req.body;
 
-    if (!language || !code) {
-      return res.status(400).json({ error: 'Language and code are required.' });
+    if (!language || !code || (!problem_id && !input)) {
+      return res.status(400).json({ error: 'Language, code, and problem_id are required.' });
     }
 
-    const setup = createTempFile(language, code);
+    let testCases = [];
+
+    if (problem_id) {
+        // Fetch problem + test cases
+        const { data: problem, error: pErr } = await supabase
+          .from('problems')
+          .select('id, test_cases, example_input, example_output, driver_code')
+          .eq('id', problem_id)
+          .single();
+
+        if (pErr || !problem) {
+          return res.status(404).json({ error: 'Problem not found.' });
+        }
+
+        // Build test cases array from structured test_cases AND example fields
+        // For RUN, we only run the public/example test cases (here we just use the first 2 if available, or just the example)
+        if (problem.example_input && problem.example_output) {
+          testCases.push({ input: problem.example_input, expected_output: problem.example_output });
+        }
+        
+        if (problem.test_cases && Array.isArray(problem.test_cases) && problem.test_cases.length > 0) {
+          // If example wasn't added, add the first one. Otherwise maybe add one more from test_cases for "Run"
+          if (testCases.length === 0) {
+            testCases.push(problem.test_cases[0]);
+          }
+        }
+    } else {
+        // Manual input
+        testCases = [{ input: input || '', expected_output: '' }];
+    }
+
+    if (testCases.length === 0) {
+      return res.status(400).json({ error: 'No example test cases found for this problem.' });
+    }
+
+    let finalCode = code;
+    // Fetch driver code if not already fetched
+    if (problem_id) {
+        const { data: prob } = await supabase.from('problems').select('driver_code').eq('id', problem_id).single();
+        if (prob && prob.driver_code && prob.driver_code[language]) {
+            finalCode = code + '\n\n' + prob.driver_code[language];
+        }
+    }
+
+    const setup = createTempFile(language, finalCode);
     if (!setup) {
-      return res.status(400).json({ error: `Unsupported language: ${language}. Supported: javascript, python` });
+      return res.status(400).json({ error: `Unsupported language: ${language}` });
     }
 
-    const result = await executeCode(setup.command, setup.args, input || '');
+    // Run code against the selected test case(s)
+    const results = [];
+    let allPassed = true;
+    let totalTime = 0;
+
+    for (let i = 0; i < testCases.length; i++) {
+        const tc = testCases[i];
+        const result = await executeCode(setup.command, setup.args, tc.input || '');
+        totalTime += result.executionTime;
+
+        const actual = result.stdout.trim();
+        const expected = (tc.expected_output || '').trim();
+        const passed = result.exitCode === 0 && actual === expected;
+
+        if (tc.expected_output && !passed) allPassed = false;
+
+        results.push({
+            test_case: i + 1,
+            passed,
+            input: tc.input || '',
+            expected_output: expected,
+            actual_output: actual,
+            stderr: result.stderr || '',
+            execution_time: `${result.executionTime}ms`,
+            status: result.tle ? 'TLE' : (result.exitCode !== 0 ? 'Runtime Error' : (passed ? 'Passed' : 'Wrong Answer'))
+        });
+    }
 
     // Cleanup
     try { fs.unlinkSync(setup.filename); } catch (_) {}
 
+    let verdict = 'Execution Successful';
+    if (testCases[0].expected_output) {
+        verdict = 'Accepted';
+        if (!allPassed) {
+            const firstFail = results.find(r => !r.passed);
+            verdict = firstFail?.status === 'TLE' ? 'Time Limit Exceeded' :
+                      firstFail?.status === 'Runtime Error' ? 'Runtime Error' : 'Wrong Answer';
+        }
+    } else if (results.some(r => r.exitCode !== 0)) {
+        verdict = 'Runtime Error';
+    }
+
     res.json({
-      stdout: result.stdout,
-      stderr: result.stderr,
-      exitCode: result.exitCode,
-      executionTime: `${result.executionTime}ms`,
-      status: result.tle ? 'TLE' : (result.exitCode === 0 ? 'Success' : 'Error')
+        verdict,
+        total_tests: testCases.length,
+        tests_passed: results.filter(r => r.passed).length,
+        total_time: `${totalTime}ms`,
+        test_results: results
     });
   } catch (err) {
     console.error('Code run error:', err);
@@ -115,7 +197,7 @@ exports.submit = async (req, res, next) => {
     // Fetch problem + test cases
     const { data: problem, error: pErr } = await supabase
       .from('problems')
-      .select('id, title, test_cases, example_input, example_output')
+      .select('id, title, test_cases, example_input, example_output, driver_code')
       .eq('id', problem_id)
       .single();
 
@@ -139,7 +221,12 @@ exports.submit = async (req, res, next) => {
       return res.status(400).json({ error: 'No test cases found for this problem. Please ask admin to add test cases.' });
     }
 
-    const setup = createTempFile(language, code);
+    let finalCode = code;
+    if (problem.driver_code && problem.driver_code[language]) {
+        finalCode = code + '\n\n' + problem.driver_code[language];
+    }
+
+    const setup = createTempFile(language, finalCode);
     if (!setup) {
       return res.status(400).json({ error: `Unsupported language: ${language}` });
     }
