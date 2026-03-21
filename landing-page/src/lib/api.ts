@@ -72,6 +72,10 @@ class ApiClient {
     return this.request<any>(`/problems/${id}`, { method: 'DELETE', headers: this.headers() });
   }
 
+  async bulkImportProblems(problems: any[]) {
+    return this.request<any>('/problems/bulk', { method: 'POST', headers: this.headers(), body: JSON.stringify({ problems }) });
+  }
+
   // ─── Aptitude ───────────────────────────────────────────
   async getAptitude(filters?: { category?: string; difficulty?: string }) {
     const params = new URLSearchParams();
@@ -91,6 +95,14 @@ class ApiClient {
 
   async deleteAptitude(id: string) {
     return this.request<any>(`/aptitude/${id}`, { method: 'DELETE', headers: this.headers() });
+  }
+
+  async bulkImportAptitude(questions: any[]) {
+    return this.request<any>('/aptitude/bulk', { method: 'POST', headers: this.headers(), body: JSON.stringify({ questions }) });
+  }
+
+  async submitAptitude(submissions: any[]) {
+    return this.request<any>('/aptitude/submit', { method: 'POST', headers: this.headers(), body: JSON.stringify({ submissions }) });
   }
 
   // ─── Companies ──────────────────────────────────────────
@@ -113,6 +125,27 @@ class ApiClient {
   // ─── Code Execution ────────────────────────────────────
   async runCode(data: { language: string; code: string; input?: string }) {
     return this.request<{ stdout: string; stderr: string; status: string; executionTime: string }>('/code/run', {
+      method: 'POST', headers: this.headers(), body: JSON.stringify(data),
+    });
+  }
+
+  async submitCode(data: { language: string; code: string; problem_id: string }) {
+    return this.request<{
+      verdict: string;
+      total_tests: number;
+      tests_passed: number;
+      total_time: string;
+      test_results: Array<{
+        test_case: number;
+        passed: boolean;
+        input: string;
+        expected_output: string;
+        actual_output: string;
+        stderr: string;
+        execution_time: string;
+        status: string;
+      }>;
+    }>('/code/submit', {
       method: 'POST', headers: this.headers(), body: JSON.stringify(data),
     });
   }

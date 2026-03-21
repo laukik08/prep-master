@@ -34,7 +34,7 @@ export default function AptitudePracticePage() {
         if (testState === 'running' && timeLeft > 0) {
             timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
         } else if (timeLeft === 0 && testState === 'running') {
-            setTestState('completed');
+            finishTest();
         }
         return () => clearInterval(timer);
     }, [testState, timeLeft]);
@@ -53,7 +53,7 @@ export default function AptitudePracticePage() {
         if (currentQuestionIndex < testQuestions.length - 1) {
             setCurrentQuestionIndex(prev => prev + 1);
         } else {
-            setTestState('completed');
+            finishTest();
         }
     };
 
@@ -63,11 +63,20 @@ export default function AptitudePracticePage() {
         }
     };
 
+    const shuffle = <T,>(arr: T[]): T[] => {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    };
+
     const startTest = (category?: string) => {
         let qs = allQuestions;
         if (category) qs = allQuestions.filter(q => q.category === category);
         if (qs.length === 0) qs = allQuestions; // fallback
-        setTestQuestions(qs.slice(0, 10)); // max 10 per test
+        setTestQuestions(shuffle(qs).slice(0, 10)); // shuffle + max 10 per test
         setTestState('running');
         setTimeLeft(5 * 60);
         setCurrentQuestionIndex(0);
@@ -84,6 +93,23 @@ export default function AptitudePracticePage() {
             total: testQuestions.length,
             accuracy: testQuestions.length > 0 ? Math.round((correct / testQuestions.length) * 100) : 0
         };
+    };
+
+    const finishTest = async () => {
+        setTestState('completed');
+        try {
+            const submissions = testQuestions.map((q, idx) => ({
+                question_id: q.id,
+                selected_option: answers[idx] !== undefined ? answers[idx] : -1,
+                is_correct: answers[idx] === q.correct_answer
+            })).filter(sub => sub.selected_option !== -1); // only submit answered questions
+
+            if (submissions.length > 0) {
+                await api.submitAptitude(submissions);
+            }
+        } catch (error) {
+            console.error('Failed to submit aptitude test:', error);
+        }
     };
 
     // Count per category
@@ -260,11 +286,12 @@ export default function AptitudePracticePage() {
                 </div>
 
                 <button 
-                    onClick={handleNext}
-                    className="px-8 py-3 rounded-xl bg-brand-500 hover:bg-brand-400 text-white shadow-lg shadow-brand-500/20 font-medium transition-colors flex items-center gap-2"
+                    onClick={currentQuestionIndex === testQuestions.length - 1 ? finishTest : handleNext}
+                    className={`px-6 py-3 rounded-xl text-white font-medium transition-colors flex items-center gap-2
+                        ${currentQuestionIndex === testQuestions.length - 1 ? 'bg-green-500 hover:bg-green-600' : 'bg-brand-500 hover:bg-brand-400'}
+                    `}
                 >
-                    {currentQuestionIndex === testQuestions.length - 1 ? 'Submit Test' : 'Next Question'} 
-                    {currentQuestionIndex < testQuestions.length - 1 && <ArrowRight className="w-4 h-4" />}
+                    {currentQuestionIndex === testQuestions.length - 1 ? 'Finish Test' : 'Next Question'} <ArrowRight className="w-4 h-4" />
                 </button>
             </div>
         </div>

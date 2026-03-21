@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Table, TableRow, TableCell } from '@/components/admin/ui/Table';
 import { Modal } from '@/components/admin/ui/Modal';
@@ -25,6 +25,9 @@ export default function AptitudeManagement() {
     });
 
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [isImportOpen, setIsImportOpen] = useState(false);
+    const [importJson, setImportJson] = useState('');
+    const [importMsg, setImportMsg] = useState('');
 
     useEffect(() => {
         fetchQuestions();
@@ -102,6 +105,26 @@ export default function AptitudeManagement() {
         }, 200);
     };
 
+    const handleJsonImport = async () => {
+        setImportMsg('');
+        try {
+            const parsed = JSON.parse(importJson);
+            const arr = Array.isArray(parsed) ? parsed : [parsed];
+            if (arr.length === 0) { setImportMsg('JSON array is empty.'); return; }
+            const result = await api.bulkImportAptitude(arr);
+            setImportMsg(`✅ Successfully imported ${result.inserted || arr.length} questions!`);
+            setImportJson('');
+            await fetchQuestions();
+            setTimeout(() => setIsImportOpen(false), 1500);
+        } catch (err: any) {
+            if (err instanceof SyntaxError) {
+                setImportMsg('❌ Invalid JSON. Please check formatting.');
+            } else {
+                setImportMsg(`❌ ${err.error || err.message || 'Import failed.'}`);
+            }
+        }
+    };
+
     const getDifficultyColor = (difficulty: string) => {
         switch (difficulty) {
             case 'Easy': return 'bg-green-500/10 text-green-400 border-green-500/20';
@@ -118,10 +141,16 @@ export default function AptitudeManagement() {
                     <h1 className="text-3xl font-bold text-white tracking-tight">Aptitude Questions</h1>
                     <p className="text-white/50 mt-1">Manage all multiple-choice aptitude questions.</p>
                 </div>
-                <Button variant="primary" className="flex items-center gap-2" onClick={openAddModal}>
-                    <Plus className="w-4 h-4" />
-                    Add Question
-                </Button>
+                <div className="flex gap-3">
+                    <Button variant="outline" className="flex items-center gap-2" onClick={() => { setIsImportOpen(true); setImportMsg(''); setImportJson(''); }}>
+                        <Upload className="w-4 h-4" />
+                        JSON Import
+                    </Button>
+                    <Button variant="primary" className="flex items-center gap-2" onClick={openAddModal}>
+                        <Plus className="w-4 h-4" />
+                        Add Question
+                    </Button>
+                </div>
             </div>
 
             {loading ? (
@@ -187,6 +216,44 @@ export default function AptitudeManagement() {
                         />
                     </div>
                 </form>
+            </Modal>
+
+            {/* JSON Import Modal */}
+            <Modal
+                isOpen={isImportOpen}
+                onClose={() => setIsImportOpen(false)}
+                title="Import Aptitude Questions from JSON"
+                footer={
+                    <>
+                        <Button variant="outline" className="text-sm px-4 py-2 h-auto" onClick={() => setIsImportOpen(false)}>Cancel</Button>
+                        <Button variant="primary" className="text-sm px-4 py-2 h-auto" onClick={handleJsonImport}>Import</Button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-white/50">Paste a JSON array of questions. Each object should have: <code className="text-brand-400">question</code>, <code className="text-brand-400">options</code> (array of 4 strings), <code className="text-brand-400">correct_answer</code> (0–3 index), <code className="text-brand-400">category</code>, <code className="text-brand-400">difficulty</code>.</p>
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-white/60 font-mono overflow-x-auto">
+{`[
+  {
+    "question": "What is 15% of 200?",
+    "options": ["20", "25", "30", "35"],
+    "correct_answer": 2,
+    "category": "Quantitative",
+    "difficulty": "Easy"
+  }
+]`}
+                    </div>
+                    <textarea
+                        value={importJson}
+                        onChange={(e) => setImportJson(e.target.value)}
+                        placeholder="Paste your JSON array here..."
+                        rows={10}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white font-mono focus:outline-none focus:border-brand-500 transition-colors resize-none"
+                    />
+                    {importMsg && (
+                        <p className={`text-sm font-medium ${importMsg.startsWith('✅') ? 'text-green-400' : 'text-red-400'}`}>{importMsg}</p>
+                    )}
+                </div>
             </Modal>
         </div>
     );

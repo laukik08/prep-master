@@ -19,13 +19,32 @@ export default function StudentDashboard() {
         api.getProblems().then(data => setProblems(data.slice(0, 3))).catch(console.error);
     }, []);
 
-    // Mock Data for charts
-    const mockTopicsChartData = [
-        { name: 'Arrays & Strings', value: 45, color: '#10B981' },
-        { name: 'Trees & Graphs', value: 25, color: '#F59E0B' },
-        { name: 'Dynamic Prog.', value: 15, color: '#EF4444' },
-        { name: 'Linked Lists', value: 15, color: '#3B82F6' },
-    ];
+    // Dynamic Data for charts
+    const topicsChartData = (progress?.topic_stats || [])
+        .filter((t: any) => t.solved > 0)
+        .sort((a: any, b: any) => b.solved - a.solved)
+        .slice(0, 5)
+        .map((t: any, i: number) => ({
+            name: t.topic,
+            value: t.solved,
+            color: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6'][i % 5]
+        }));
+
+    const weakAreas = (progress?.topic_stats || [])
+        .filter((t: any) => t.total > 0)
+        .map((t: any) => ({
+            topic: t.topic,
+            percentage: Math.round((t.solved / t.total) * 100),
+            left: t.total - t.solved
+        }))
+        .filter((t: any) => t.percentage < 100)
+        .sort((a: any, b: any) => a.percentage - b.percentage)
+        .slice(0, 3)
+        .map((t: any) => ({
+            topic: t.topic,
+            score: `${t.percentage}%`,
+            tasks: `${t.left} problems left`
+        }));
 
     const recentActivity = [
         { id: 1, action: 'Solved', item: 'Two Sum', time: '2 hours ago', type: 'coding' },
@@ -93,20 +112,16 @@ export default function StudentDashboard() {
                         <div className="h-[350px]">
                             <ProgressChart 
                                 title="Problems by Topic" 
-                                data={mockTopicsChartData} 
-                                centerText="142" 
+                                data={topicsChartData.length > 0 ? topicsChartData : [{ name: 'No Data', value: 1, color: '#333' }]} 
+                                centerText={progress?.problems_solved?.toString() || "0"} 
                                 centerSubtext="Total Solved" 
                             />
                         </div>
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                        <div className="h-[350px] bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col">
                             <h3 className="text-lg font-semibold text-white mb-6">Weak Areas Identified</h3>
-                            <div className="space-y-5">
-                                {[
-                                    { topic: "Dynamic Programming", score: "42%", tasks: "24 problems left" },
-                                    { topic: "Graph Algorithms", score: "55%", tasks: "18 problems left" },
-                                    { topic: "Logical Reasoning", score: "60%", tasks: "5 tests left" },
-                                ].map((wk, i) => (
-                                    <div key={i} className="flex flex-col gap-2">
+                            <div className="flex-1 flex flex-col space-y-5 overflow-y-auto pr-2 nice-scrollbar">
+                                {weakAreas.length > 0 ? weakAreas.map((wk: any, i: number) => (
+                                    <div key={i} className="flex flex-col gap-2 shrink-0">
                                         <div className="flex justify-between items-end">
                                             <span className="font-medium text-white/80">{wk.topic}</span>
                                             <span className="text-xs text-white/40">{wk.tasks}</span>
@@ -118,11 +133,17 @@ export default function StudentDashboard() {
                                             <span className="text-sm font-bold text-red-400 w-10 text-right">{wk.score}</span>
                                         </div>
                                     </div>
-                                ))}
-                                <button className="w-full mt-4 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-lg text-sm transition-colors border border-white/10">
-                                    Generate Practice Set
-                                </button>
+                                )) : (
+                                    <div className="flex-1 flex items-center justify-center text-white/30 text-sm">
+                                        Solve problems to unlock weak area insights.
+                                    </div>
+                                )}
                             </div>
+                            <button className="w-full mt-auto pt-4 shrink-0">
+                                <div className="w-full py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-lg text-sm transition-colors border border-white/10">
+                                    Generate Practice Set
+                                </div>
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -11,14 +11,6 @@ import {
 } from 'recharts';
 import { api } from '@/lib/api';
 
-const mockStudentActivity = [
-    { id: 1, name: 'Alex Johnson', problems: 145, aptitude: 92, lastActive: '10 mins ago' },
-    { id: 2, name: 'Priya Sharma', problems: 210, aptitude: 88, lastActive: '1 hour ago' },
-    { id: 3, name: 'Michael Chen', problems: 85, aptitude: 76, lastActive: '3 hours ago' },
-    { id: 4, name: 'Sarah Williams', problems: 320, aptitude: 95, lastActive: '5 hours ago' },
-    { id: 5, name: 'Rohan Gupta', problems: 45, aptitude: 60, lastActive: '1 day ago' },
-];
-
 const mockCodingData = [
     { name: 'Mon', solved: 120 },
     { name: 'Tue', solved: 210 },
@@ -38,9 +30,11 @@ const mockAptitudeData = [
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState<any>(null);
+    const [students, setStudents] = useState<any[]>([]);
 
     useEffect(() => {
         api.getAdminStats().then(setStats).catch(console.error);
+        api.getAdminUsers().then(data => setStudents(data.slice(0, 5))).catch(console.error);
     }, []);
 
     return (
@@ -105,13 +99,13 @@ export default function AdminDashboard() {
             {/* Recent Activity Table */}
             <div>
                 <h2 className="text-xl font-bold text-white mb-4">Recent Student Activity</h2>
-                <Table headers={['Student Name', 'Problems Solved', 'Aptitude Score', 'Last Active']}>
-                    {mockStudentActivity.map((student) => (
+                <Table headers={['Student Name', 'Problems Solved', 'Aptitude Score', 'Total Submissions']}>
+                    {students.map((student) => (
                         <TableRow key={student.id}>
-                            <TableCell className="font-medium text-white">{student.name}</TableCell>
+                            <TableCell className="font-medium text-white">{student.name || student.email}</TableCell>
                             <TableCell>
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                                    {student.problems}
+                                    {student.solved}
                                 </span>
                             </TableCell>
                             <TableCell>
@@ -125,7 +119,7 @@ export default function AdminDashboard() {
                                     <span className="text-xs text-white/70">{student.aptitude}%</span>
                                 </div>
                             </TableCell>
-                            <TableCell className="text-white/50 text-xs">{student.lastActive}</TableCell>
+                            <TableCell className="text-white/50 text-xs">{student.total_submissions}</TableCell>
                         </TableRow>
                     ))}
                 </Table>

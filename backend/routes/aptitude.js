@@ -5,6 +5,7 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 
 // Student routes
 router.get('/', authMiddleware, aptitudeController.getAll);
+router.post('/submit', authMiddleware, aptitudeController.submit);
 
 // Admin routes
 router.post('/', authMiddleware, roleMiddleware('admin'), aptitudeController.create);

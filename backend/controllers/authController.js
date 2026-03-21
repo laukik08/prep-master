@@ -19,7 +19,7 @@ exports.register = async (req, res, next) => {
     }
 
     // Hash password
-    const salt = await bcrypt.genSalt(12);
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Insert user
@@ -113,7 +113,7 @@ exports.changePassword = async (req, res, next) => {
     }
 
     // Hash new password
-    const salt = await bcrypt.genSalt(12);
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     // Update password

@@ -18,6 +18,32 @@ exports.getAll = async (req, res, next) => {
   }
 };
 
+// POST /api/aptitude/submit
+exports.submit = async (req, res, next) => {
+  try {
+    const { submissions } = req.body;
+    const user_id = req.user.id;
+
+    if (!submissions || !Array.isArray(submissions)) {
+      return res.status(400).json({ error: 'Submissions array required' });
+    }
+
+    const inserts = submissions.map(sub => ({
+      user_id,
+      question_id: sub.question_id,
+      selected_option: sub.selected_option,
+      is_correct: sub.is_correct
+    }));
+
+    const { error } = await supabase.from('aptitude_submissions').insert(inserts);
+    if (error) throw error;
+
+    res.status(200).json({ message: 'Results saved successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // POST /api/aptitude (Admin)
 exports.create = async (req, res, next) => {
   try {

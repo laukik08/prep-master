@@ -33,7 +33,8 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
     const [language, setLanguage] = useState('javascript');
     const [code, setCode] = useState(initialCodeSnippets['javascript']);
     const [isRunning, setIsRunning] = useState(false);
-    const [consoleOutput, setConsoleOutput] = useState<{ status: string; stdout?: string; stderr?: string; time?: string } | null>(null);
+    const [consoleOutput, setConsoleOutput] = useState<any>(null);
+    const [activeTestCase, setActiveTestCase] = useState(0);
     const router = useRouter();
 
     useEffect(() => {
@@ -51,42 +52,41 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
         setCode(initialCodeSnippets[newLang]);
     };
 
-    const handleRunCode = async (isSubmit: boolean = false) => {
+    const handleRunCode = async () => {
         setIsRunning(true);
         setConsoleOutput(null);
-        
         try {
-            const runResult = await api.runCode({ language, code });
-            const hasError = !!runResult.stderr;
-            const isSuccess = runResult.status === 'Success';
-
-            if (isSubmit && isSuccess) {
-                // Save submission to DB on Submit
-                await api.createSubmission({
-                    problem_id: id,
-                    language,
-                    code,
-                    verdict: 'Accepted',
-                    execution_time: parseInt(runResult.executionTime) || 0
-                });
-            }
-
+            const result = await api.runCode({ language, code });
             setConsoleOutput({ 
-                status: isSubmit
-                    ? (isSuccess ? 'Accepted' : (hasError ? 'Runtime Error' : 'Wrong Answer'))
-                    : (isSuccess ? 'Execution Successful' : 'Runtime Error'),
-                stdout: runResult.stdout || '',
-                stderr: runResult.stderr || '',
-                time: runResult.executionTime
+                mode: 'run',
+                status: result.status === 'Success' ? 'Execution Successful' : 'Runtime Error',
+                stdout: result.stdout || '',
+                stderr: result.stderr || '',
+                time: result.executionTime
             });
-
         } catch (error: any) {
-            console.error('Execution Failed', error);
-            setConsoleOutput({ 
-                status: 'Execution Failed', 
-                stderr: error?.error || 'Could not connect to the code execution service.',
-                time: '-'
+            setConsoleOutput({ mode: 'run', status: 'Execution Failed', stderr: error?.error || 'Connection error.', time: '-' });
+        } finally {
+            setIsRunning(false);
+        }
+    };
+
+    const handleSubmitCode = async () => {
+        setIsRunning(true);
+        setConsoleOutput(null);
+        setActiveTestCase(0);
+        try {
+            const result = await api.submitCode({ language, code, problem_id: id });
+            setConsoleOutput({
+                mode: 'submit',
+                verdict: result.verdict,
+                total_tests: result.total_tests,
+                tests_passed: result.tests_passed,
+                total_time: result.total_time,
+                test_results: result.test_results
             });
+        } catch (error: any) {
+            setConsoleOutput({ mode: 'run', status: 'Submission Failed', stderr: error?.error || 'Connection error.', time: '-' });
         } finally {
             setIsRunning(false);
         }
@@ -199,12 +199,11 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
                 </div>
 
                 {/* Console / Verdict Section */}
-                <div className="h-64 shrink-0 bg-[#0a0618] border border-white/10 rounded-xl overflow-hidden shadow-2xl flex flex-col relative group">
+                <div className="h-72 shrink-0 bg-[#0a0618] border border-white/10 rounded-xl overflow-hidden shadow-2xl flex flex-col relative group">
                     <div className="h-10 border-b border-white/10 bg-white/[0.02] flex items-center justify-between px-4">
                         <span className="text-sm font-semibold text-white/80">Console</span>
-                        {consoleOutput?.time && (
-                            <span className="text-xs text-white/40 font-mono">Runtime: {consoleOutput.time}</span>
-                        )}
+                        {consoleOutput?.time && <span className="text-xs text-white/40 font-mono">Runtime: {consoleOutput.time}</span>}
+                        {consoleOutput?.total_time && <span className="text-xs text-white/40 font-mono">Total: {consoleOutput.total_time}</span>}
                     </div>
                     <div className="flex-1 p-4 overflow-y-auto nice-scrollbar">
                         {!consoleOutput && !isRunning && (
@@ -218,25 +217,25 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
                                 Executing Code...
                             </div>
                         )}
-                        {consoleOutput && !isRunning && (
+
+                        {/* RUN mode output */}
+                        {consoleOutput && !isRunning && consoleOutput.mode === 'run' && (
                             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
                                 <div className={`text-sm font-bold px-3 py-1.5 rounded-lg inline-block ${
-                                    consoleOutput.status === 'Accepted' || consoleOutput.status === 'Execution Successful'
+                                    consoleOutput.status === 'Execution Successful'
                                         ? 'bg-green-500/10 text-green-400 border border-green-500/20'
                                         : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                }`}>
-                                    {consoleOutput.status}
-                                </div>
+                                }`}>{consoleOutput.status}</div>
                                 {consoleOutput.stdout && (
                                     <div>
                                         <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">stdout</span>
-                                        <pre className="mt-1 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-green-300 font-mono whitespace-pre-wrap overflow-x-auto">{consoleOutput.stdout}</pre>
+                                        <pre className="mt-1 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-green-300 font-mono whitespace-pre-wrap">{consoleOutput.stdout}</pre>
                                     </div>
                                 )}
                                 {consoleOutput.stderr && (
                                     <div>
                                         <span className="text-xs font-semibold text-red-400/70 uppercase tracking-wider">stderr</span>
-                                        <pre className="mt-1 bg-red-500/5 border border-red-500/10 rounded-lg p-3 text-sm text-red-300 font-mono whitespace-pre-wrap overflow-x-auto">{consoleOutput.stderr}</pre>
+                                        <pre className="mt-1 bg-red-500/5 border border-red-500/10 rounded-lg p-3 text-sm text-red-300 font-mono whitespace-pre-wrap">{consoleOutput.stderr}</pre>
                                     </div>
                                 )}
                                 {!consoleOutput.stdout && !consoleOutput.stderr && (
@@ -244,19 +243,77 @@ export default function ProblemSolvingPage({ params }: { params: Promise<{ id: s
                                 )}
                             </div>
                         )}
+
+                        {/* SUBMIT mode output — LeetCode-style test case results */}
+                        {consoleOutput && !isRunning && consoleOutput.mode === 'submit' && (
+                            <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
+                                {/* Verdict Header */}
+                                <div className="flex items-center gap-3">
+                                    <div className={`text-lg font-bold px-4 py-1.5 rounded-lg inline-block ${
+                                        consoleOutput.verdict === 'Accepted'
+                                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                    }`}>{consoleOutput.verdict}</div>
+                                    <span className="text-sm text-white/50">
+                                        {consoleOutput.tests_passed}/{consoleOutput.total_tests} test cases passed
+                                    </span>
+                                </div>
+
+                                {/* Test Case Tabs */}
+                                <div className="flex gap-2 flex-wrap">
+                                    {consoleOutput.test_results?.map((tc: any, i: number) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setActiveTestCase(i)}
+                                            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors border ${
+                                                activeTestCase === i 
+                                                    ? 'bg-white/10 border-white/20 text-white'
+                                                    : 'bg-white/[0.02] border-white/5 text-white/40 hover:text-white/60'
+                                            }`}
+                                        >
+                                            <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${tc.passed ? 'bg-green-400' : 'bg-red-400'}`} />
+                                            Case {tc.test_case}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Active Test Case Detail */}
+                                {consoleOutput.test_results?.[activeTestCase] && (() => {
+                                    const tc = consoleOutput.test_results[activeTestCase];
+                                    return (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <div>
+                                                <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">Input</span>
+                                                <pre className="mt-1 bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-blue-300 font-mono whitespace-pre-wrap min-h-[40px]">{tc.input || '(none)'}</pre>
+                                            </div>
+                                            <div>
+                                                <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">Expected</span>
+                                                <pre className="mt-1 bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-green-300 font-mono whitespace-pre-wrap min-h-[40px]">{tc.expected_output}</pre>
+                                            </div>
+                                            <div>
+                                                <span className={`text-xs font-semibold uppercase tracking-wider ${tc.passed ? 'text-green-400/70' : 'text-red-400/70'}`}>Your Output</span>
+                                                <pre className={`mt-1 border rounded-lg p-2.5 text-xs font-mono whitespace-pre-wrap min-h-[40px] ${
+                                                    tc.passed ? 'bg-green-500/5 border-green-500/10 text-green-300' : 'bg-red-500/5 border-red-500/10 text-red-300'
+                                                }`}>{tc.actual_output || tc.stderr || '(no output)'}</pre>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
                     </div>
                     
-                    {/* Action Bar (Absolute bottom of right panel) */}
+                    {/* Action Bar */}
                     <div className="absolute top-1 right-2 flex justify-end gap-3 z-10 p-4">
                         <button 
-                            onClick={() => handleRunCode(false)}
+                            onClick={handleRunCode}
                             disabled={isRunning}
                             className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed border border-white/5"
                         >
                             <Play className="w-4 h-4" /> Run
                         </button>
                         <button 
-                            onClick={() => handleRunCode(true)}
+                            onClick={handleSubmitCode}
                             disabled={isRunning}
                             className="bg-brand-500 hover:bg-brand-400 text-white px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm shadow-[0_0_20px_rgba(124,58,237,0.3)] disabled:opacity-50 disabled:cursor-not-allowed border border-brand-500/50"
                         >

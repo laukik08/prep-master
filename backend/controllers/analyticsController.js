@@ -14,7 +14,8 @@ exports.studentProgress = async (req, res, next) => {
 
     if (e1) throw e1;
 
-    const uniqueProblemsSolved = [...new Set((accepted || []).map(s => s.problem_id))].length;
+    const acceptedProblemIds = new Set((accepted || []).map(s => s.problem_id));
+    const uniqueProblemsSolved = acceptedProblemIds.size;
 
     // Total submissions
     const { count: totalSubmissions, error: e2 } = await supabase
@@ -24,24 +25,46 @@ exports.studentProgress = async (req, res, next) => {
 
     if (e2) throw e2;
 
-    // Total problems available
-    const { count: totalProblems, error: e3 } = await supabase
+    // All problems to calculate topic stats
+    const { data: allProblems, error: e3 } = await supabase
       .from('problems')
-      .select('id', { count: 'exact', head: true });
+      .select('id, topics');
 
     if (e3) throw e3;
 
-    // Aptitude accuracy — for simplicity, return a mock percentage
-    // (In production, you'd have aptitude_submissions table)
-    const aptitudeAccuracy = 78;
+    const totalProblems = allProblems.length;
 
-    // Company readiness (average from companies table)
-    const { data: companies, error: e4 } = await supabase.from('companies').select('*');
-    if (e4) throw e4;
+    // Calculate topic mastery
+    const topicStatsMap = {};
+    allProblems.forEach(p => {
+      const pTopics = p.topics || [];
+      const isSolved = acceptedProblemIds.has(p.id);
+      pTopics.forEach(t => {
+        if (!topicStatsMap[t]) {
+          topicStatsMap[t] = { topic: t, total: 0, solved: 0 };
+        }
+        topicStatsMap[t].total += 1;
+        if (isSolved) topicStatsMap[t].solved += 1;
+      });
+    });
 
-    const companyReadiness = companies && companies.length > 0
-      ? Math.round(companies.reduce((sum, c) => sum + ((c.coding_problem_count + c.aptitude_question_count) > 0 ? 50 : 0), 0) / companies.length)
-      : 0;
+    const topic_stats = Object.values(topicStatsMap);
+
+    // Real Aptitude accuracy from aptitude_submissions
+    const { data: aptitudeSubs } = await supabase
+      .from('aptitude_submissions')
+      .select('is_correct')
+      .eq('user_id', user_id);
+    
+    let aptitudeAccuracy = 0;
+    if (aptitudeSubs && aptitudeSubs.length > 0) {
+      const correct = aptitudeSubs.filter(s => s.is_correct).length;
+      aptitudeAccuracy = Math.round((correct / aptitudeSubs.length) * 100);
+    }
+
+    // Company readiness (calculated based on coding progress and aptitude accuracy)
+    const codingProgress = totalProblems > 0 ? (uniqueProblemsSolved / totalProblems) * 100 : 0;
+    const companyReadiness = Math.round((codingProgress * 0.6) + (aptitudeAccuracy * 0.4));
 
     const xp = (uniqueProblemsSolved * 100) + (aptitudeAccuracy * 10);
     const level = Math.floor(xp / 1000) + 1;
@@ -52,6 +75,7 @@ exports.studentProgress = async (req, res, next) => {
       total_submissions: totalSubmissions || 0,
       aptitude_accuracy: aptitudeAccuracy,
       company_readiness: companyReadiness,
+      topic_stats,
       xp,
       level
     });
@@ -105,12 +129,45 @@ exports.adminUsers = async (req, res, next) => {
 
     if (error) throw error;
 
-    const enrichedUsers = users.map(user => ({
-      ...user,
-      solved: Math.floor(Math.random() * 200),
-      aptitude: Math.floor(Math.random() * 50) + 50,
-      readiness: Math.floor(Math.random() * 50) + 50
-    }));
+    // Fetch all submissions to compute per-student stats
+    const { data: allSubmissions } = await supabase
+      .from('submissions')
+      .select('user_id, problem_id, verdict');
+
+    const { data: allAptitude } = await supabase
+      .from('aptitude_submissions')
+      .select('user_id, is_correct');
+
+    // Get total problems count for readiness calculation
+    const { count: totalProblemsCount } = await supabase
+      .from('problems')
+      .select('id', { count: 'exact', head: true });
+
+    const enrichedUsers = users.map(user => {
+      const userSubs = (allSubmissions || []).filter(s => s.user_id === user.id);
+      const acceptedProblems = [...new Set(userSubs.filter(s => s.verdict === 'Accepted').map(s => s.problem_id))];
+      
+      const userAptitude = (allAptitude || []).filter(a => a.user_id === user.id);
+      const aptitudeAccuracy = userAptitude.length > 0
+        ? Math.round((userAptitude.filter(a => a.is_correct).length / userAptitude.length) * 100)
+        : 0;
+
+      // Readiness = weighted: 50% coding progress + 50% aptitude accuracy
+      const codingProgress = totalProblemsCount > 0 
+        ? Math.round((acceptedProblems.length / totalProblemsCount) * 100) 
+        : 0;
+      const readiness = Math.round(codingProgress * 0.5 + aptitudeAccuracy * 0.5);
+
+      return {
+        ...user,
+        solved: acceptedProblems.length,
+        aptitude: aptitudeAccuracy,
+        readiness: Math.min(readiness, 100),
+        total_submissions: userSubs.length,
+        aptitude_total: userAptitude.length,
+        aptitude_correct: userAptitude.filter(a => a.is_correct).length,
+      };
+    });
 
     res.json(enrichedUsers);
   } catch (err) {
