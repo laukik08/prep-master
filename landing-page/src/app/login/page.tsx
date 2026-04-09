@@ -27,10 +27,14 @@ export default function LoginPage() {
         const userStr = searchParams.get('user');
         const oauthError = searchParams.get('error');
 
+        
+                
         if (oauthError) {
             setError(oauthError);
             // Clean URL
-            window.history.replaceState({}, '', '/login');
+          if (typeof window !== "undefined") {
+              window.history.replaceState({}, '', '/login');
+                }
             return;
         }
 
